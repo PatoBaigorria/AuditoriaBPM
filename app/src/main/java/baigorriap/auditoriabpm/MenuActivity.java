@@ -51,8 +51,8 @@ public class MenuActivity extends AppCompatActivity {
         View headerView = navigationView.getHeaderView(0);
         TextView navHeaderTitle = headerView.findViewById(R.id.nav_header_title);
         TextView navHeaderSubtitle = headerView.findViewById(R.id.nav_header_subtitle);
-        navHeaderTitle.setText(nombre);
-        navHeaderSubtitle.setText(String.valueOf(legajo));
+        navHeaderTitle.setText("Supervisor" + " " + nombre);
+        navHeaderSubtitle.setText(String.valueOf("Legajo: " + legajo));
     }
     @Override
     public boolean onSupportNavigateUp() {
