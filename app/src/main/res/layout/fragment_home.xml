@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.home.HomeFragment">
+
+    <TextView
+        android:id="@+id/tvLeyendaLin"
+        android:layout_width="340dp"
+        android:layout_height="39dp"
+        android:layout_marginStart="128dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="128dp"
+        android:text="Si desea cambiar la Línea, seleccione un ítem de la lista"
+        android:textAlignment="center"
+        android:textSize="13dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.621"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/spnLinea" />
+
+    <TextView
+        android:id="@+id/text_home"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="62dp"
+        android:text="Datos del Operario"
+        android:textAlignment="center"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <EditText
+        android:id="@+id/etLegajo"
+        android:layout_width="389dp"
+        android:layout_height="62dp"
+        android:layout_marginTop="60dp"
+        android:background="@drawable/borde_rectangulo"
+        android:ems="10"
+        android:gravity="center"
+        android:hint="Legajo"
+        android:inputType="number"
+        android:textSize="18dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/text_home" />
+
+    <Spinner
+        android:id="@+id/spnActividad"
+        android:layout_width="385dp"
+        android:layout_height="59dp"
+        android:layout_marginTop="38dp"
+        android:background="@drawable/rectangulo_3d"
+        android:textAlignment="center"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.423"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvNombreOp" />
+
+    <Spinner
+        android:id="@+id/spnLinea"
+        android:layout_width="385dp"
+        android:layout_height="59dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="28dp"
+        android:layout_marginEnd="8dp"
+        android:background="@drawable/rectangulo_3d"
+        android:textAlignment="center"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvLeyendaAct" />
+
+    <Button
+        android:id="@+id/btSiguiente"
+        android:layout_width="144dp"
+        android:layout_height="53dp"
+        android:layout_marginStart="269dp"
+        android:layout_marginTop="138dp"
+        android:layout_marginEnd="34dp"
+        android:layout_marginBottom="45dp"
+        android:text="Siguiente"
+        android:textAlignment="center"
+        android:textSize="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvLeyendaLin" />
+
+    <TextView
+        android:id="@+id/tvLeyendaAct"
+        android:layout_width="359dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="128dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="128dp"
+        android:text="Si desea cambiar la Actividad, seleccione un ítem de la lista"
+        android:textAlignment="center"
+        android:textSize="13dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.549"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/spnActividad" />
+
+    <TextView
+        android:id="@+id/tvNombreOp"
+        android:layout_width="389dp"
+        android:layout_height="59dp"
+        android:layout_marginStart="18dp"
+        android:layout_marginTop="52dp"
+        android:layout_marginEnd="17dp"
+        android:background="@drawable/borde_gris"
+        android:gravity="center"
+        android:hint="Nombre"
+        android:inputType="text"
+        android:textSize="18dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.615"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/etLegajo" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

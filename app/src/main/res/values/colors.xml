@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="white">#FFFFFFFF</color>
+    <color name="hintColorDark">#404040</color> <!-- Gris oscuro -->
+    <color name="hintColorDarker">#303030</color> <!-- Más oscuro aún -->
+    <color name="black">#000000</color>
+    <color name="hintColorBlack">#000000</color> <!-- Para asegurarte de que el hint sea negro -->
+    <color name="colorBackground">#FFFFFF</color>
+</resources>

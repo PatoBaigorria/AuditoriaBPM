@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="CustomTextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <!-- Color para el hint cuando el campo está inactivo -->
+        <item name="hintTextColor">@color/hintColorDark</item>
+        <!-- Color para el hint cuando está en foco o activo -->
+        <item name="android:textColorHint">@color/hintColorDark</item>
+    </style>
+
+</resources>
