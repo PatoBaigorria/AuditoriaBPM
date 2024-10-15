@@ -40,11 +40,11 @@ public class Actividad implements Serializable {
         if (this == o) return true;
         if (!(o instanceof Actividad)) return false;
         Actividad actividad = (Actividad) o;
-        return Objects.equals(descripcion, actividad.descripcion);
+        return idActividad == actividad.idActividad; // Comparar por idActividad
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(descripcion);
+        return Objects.hash(idActividad); // Usar idActividad para el hash
     }
 }

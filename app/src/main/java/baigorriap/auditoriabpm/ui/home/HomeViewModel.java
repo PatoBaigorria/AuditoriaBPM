@@ -176,8 +176,18 @@ public class HomeViewModel extends AndroidViewModel {
             @Override
             public void onResponse(Call<List<Actividad>> call, Response<List<Actividad>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    // Añadir todas las actividades al spinner
-                    mListaActividad.getValue().addAll(response.body());
+                    List<Actividad> actividadesActuales = mListaActividad.getValue();
+                    List<Actividad> actividadesTodas = response.body();
+
+                    // Filtrar actividades duplicadas
+                    for (Actividad nuevaActividad : actividadesTodas) {
+                        if (!actividadesActuales.contains(nuevaActividad)) {
+                            actividadesActuales.add(nuevaActividad);
+                        }
+                    }
+
+                    // Actualizar la lista de actividades en LiveData
+                    mListaActividad.setValue(actividadesActuales);
                 } else {
                     Log.e("HomeViewModel", "Error al obtener todas las actividades: " + response.code() + " - " + response.message());
                 }
@@ -190,6 +200,7 @@ public class HomeViewModel extends AndroidViewModel {
         });
     }
 
+
     // Obtener todas las líneas
     private void cargarTodasLasLineas() {
         String token = "Bearer " + ApiClient.leerToken(application);
@@ -198,8 +209,17 @@ public class HomeViewModel extends AndroidViewModel {
             @Override
             public void onResponse(Call<List<Linea>> call, Response<List<Linea>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    // Añadir todas las líneas al spinner
-                    mListaLinea.getValue().addAll(response.body());
+                    List<Linea> lineasActuales = mListaLinea.getValue();
+                    List<Linea> lineasTodas = response.body();
+
+                    // Filtrar lineas duplicadas
+                    for (Linea nuevaLinea : lineasTodas) {
+                        if (!lineasActuales.contains(nuevaLinea)) {
+                            lineasActuales.add(nuevaLinea);
+                        }
+                    }
+                    // Actualizar la lista de actividades en LiveData
+                    mListaLinea.setValue(lineasActuales);
                 } else {
                     Log.e("HomeViewModel", "Error al obtener todas las líneas: " + response.code() + " - " + response.message());
                 }

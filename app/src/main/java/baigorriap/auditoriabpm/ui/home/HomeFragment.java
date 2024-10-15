@@ -30,6 +30,9 @@ public class HomeFragment extends Fragment {
     private HomeViewModel vm;
     private Spinner spnActividad, spnLinea;
     private TextView tvNombreOp;
+    private ArrayAdapter<Actividad> actividadAdapter;
+    private ArrayAdapter<Linea> lineaAdapter;
+
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -106,24 +109,45 @@ public class HomeFragment extends Fragment {
         // Observa la lista de actividades
         vm.getMListaActividad().observe(getViewLifecycleOwner(), actividades -> {
             if (actividades != null && !actividades.isEmpty()) {
-                ArrayAdapter<Actividad> actividadAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, actividades);
-                actividadAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                spnActividad.setAdapter(actividadAdapter);
+                if (actividadAdapter == null) {
+                    actividadAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, actividades);
+                    actividadAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    spnActividad.setAdapter(actividadAdapter);
+                } else {
+                    actividadAdapter.clear();
+                    actividadAdapter.addAll(actividades);
+                    actividadAdapter.notifyDataSetChanged();
+                }
             } else {
                 // Si la lista de actividades está vacía, limpiar el spinner
                 vm.limpiarSpinnersConHint();
+                if (actividadAdapter != null) {
+                    actividadAdapter.clear();
+                    actividadAdapter.notifyDataSetChanged();
+                }
             }
         });
+
 
         // Observa la lista de líneas
         vm.getMListaLinea().observe(getViewLifecycleOwner(), lineas -> {
             if (lineas != null && !lineas.isEmpty()) {
-                ArrayAdapter<Linea> lineaAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, lineas);
-                lineaAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                spnLinea.setAdapter(lineaAdapter);
+                if (lineaAdapter == null) {
+                    lineaAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, lineas);
+                    lineaAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    spnLinea.setAdapter(lineaAdapter);
+                } else {
+                    lineaAdapter.clear();
+                    lineaAdapter.addAll(lineas);
+                    lineaAdapter.notifyDataSetChanged();
+                }
             } else {
                 // Si la lista de líneas está vacía, limpiar el spinner
                 vm.limpiarSpinnersConHint();
+                if (lineaAdapter != null) {
+                    lineaAdapter.clear();
+                    lineaAdapter.notifyDataSetChanged();
+                }
             }
         });
         // Configuración del botón "Siguiente"

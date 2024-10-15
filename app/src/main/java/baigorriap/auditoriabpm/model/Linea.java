@@ -1,6 +1,7 @@
 package baigorriap.auditoriabpm.model;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class Linea implements Serializable {
     private int idLinea;
@@ -9,9 +10,9 @@ public class Linea implements Serializable {
     public Linea() {
     }
 
-    public Linea(int idLinea, String descrpcion) {
+    public Linea(int idLinea, String descripcion) {
         this.idLinea = idLinea;
-        this.descripcion = descrpcion;
+        this.descripcion = descripcion;
     }
 
     public int getIdLinea() {
@@ -22,15 +23,28 @@ public class Linea implements Serializable {
         this.idLinea = idLinea;
     }
 
-    public String getDescrpcion() {
+    public String getDescripcion() {
         return descripcion;
     }
 
-    public void setDescrpcion(String descrpcion) {
+    public void setDescripcion(String descrpcion) {
         this.descripcion = descrpcion;
     }
     @Override
     public String toString() {
         return descripcion; // Muestra la descripción en el spinner
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Linea)) return false;
+        Linea linea = (Linea) o;
+        return idLinea == linea.idLinea;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(idLinea);
     }
 }
