@@ -11,8 +11,8 @@
         android:label="@string/menu_home"
         tools:layout="@layout/fragment_home" >
         <action
-            android:id="@+id/action_nav_home_to_nav_gallery"
-            app:destination="@id/nav_gallery" />
+            android:id="@+id/action_nav_home_to_nav_auditoria"
+            app:destination="@id/nav_auditoria" />
     </fragment>
 
     <fragment
@@ -26,4 +26,9 @@
         android:name="baigorriap.auditoriabpm.ui.slideshow.SlideshowFragment"
         android:label="@string/menu_slideshow"
         tools:layout="@layout/fragment_slideshow" />
+    <fragment
+        android:id="@+id/nav_auditoria"
+        android:name="baigorriap.auditoriabpm.ui.home.AuditoriaFragment"
+        android:label="Auditoría BPM"
+        tools:layout="@layout/fragment_auditoria" />
 </navigation>

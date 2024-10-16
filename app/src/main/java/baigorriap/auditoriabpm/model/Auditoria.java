@@ -1,6 +1,7 @@
 package baigorriap.auditoriabpm.model;
 
 import java.io.Serializable;
+import java.util.Date;
 
 public class Auditoria implements Serializable {
     private int idAuditoria;
@@ -8,13 +9,13 @@ public class Auditoria implements Serializable {
     private int idOperario;
     private int idActividad;
     private int idLinea;
-    private String fecha;
+    private Date fecha;
     private String comentarios;
 
     public Auditoria() {
     }
 
-    public Auditoria(int idAuditoria, int idSupervisor, int idOperario, int idActividad, int idLinea, String fecha, String comentarios) {
+    public Auditoria(int idAuditoria, int idSupervisor, int idOperario, int idActividad, int idLinea, Date fecha, String comentarios) {
         this.idAuditoria = idAuditoria;
         this.idSupervisor = idSupervisor;
         this.idOperario = idOperario;
@@ -64,11 +65,11 @@ public class Auditoria implements Serializable {
         this.idLinea = idLinea;
     }
 
-    public String getFecha() {
+    public Date getFecha() {
         return fecha;
     }
 
-    public void setFecha(String fecha) {
+    public void setFecha(Date fecha) {
         this.fecha = fecha;
     }
 

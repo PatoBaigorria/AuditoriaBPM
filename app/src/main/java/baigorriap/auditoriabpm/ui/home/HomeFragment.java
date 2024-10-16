@@ -7,7 +7,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -17,7 +16,8 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
-import androidx.navigation.fragment.NavHostFragment;
+import androidx.navigation.NavOptions;
+import androidx.navigation.Navigation;
 
 import baigorriap.auditoriabpm.R;
 import baigorriap.auditoriabpm.databinding.FragmentHomeBinding;
@@ -151,11 +151,13 @@ public class HomeFragment extends Fragment {
             }
         });
         // Configuración del botón "Siguiente"
-        Button btSiguiente = binding.btSiguiente;
-        btSiguiente.setOnClickListener(v -> {
-            NavController navController = NavHostFragment.findNavController(HomeFragment.this);
-            navController.navigate(R.id.action_nav_home_to_nav_gallery);
+        binding.btSiguiente.setOnClickListener(v -> {
+            NavController navController = Navigation.findNavController(v);
+            navController.navigate(R.id.nav_auditoria, null, new NavOptions.Builder()
+                    .setPopUpTo(R.id.nav_home, true) // Esto elimina HomeFragment del backstack
+                    .build());
         });
+
 
         return root;
     }
