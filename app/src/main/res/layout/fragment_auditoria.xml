@@ -1,11 +1,12 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.home.AuditoriaFragment">
 
+    <!-- Campo Operario y Fecha tal como lo tienes -->
     <TextView
         android:id="@+id/tvNombOp"
         android:layout_width="79dp"
@@ -53,5 +54,313 @@
         app:layout_constraintStart_toEndOf="@+id/tvFecha"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- Aquí comienza el TableLayout para los ítems a evaluar -->
+    <TableLayout
+        android:id="@+id/tableItems"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:stretchColumns="1,2,3"
+        android:shrinkColumns="2"
+        android:divider="?android:dividerHorizontal"
+        android:showDividers="middle"
+        app:layout_constraintTop_toBottomOf="@+id/tvCampoFecha"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Cabecera de la tabla -->
+        <TableRow
+            android:background="@android:color/darker_gray"
+            android:layout_margin="1dp">
+
+            <TextView
+                android:text="Item a Evaluar"
+                android:padding="8dp"
+                android:layout_gravity="center"
+                android:textStyle="bold" />
+            <TextView
+                android:text="OK"
+                android:layout_gravity="center"
+                android:textStyle="bold"
+                android:padding="4dp"/>
+
+            <TextView
+                android:text="NO OK"
+                android:layout_width="68dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:textStyle="bold" />
+
+            <TextView
+                android:text="N/A"
+                android:layout_width="68dp"
+                android:layout_gravity="center"
+                android:padding="8dp"
+                android:textStyle="bold" />
+        </TableRow>
+
+        <!-- Fila 1 -->
+        <TableRow>
+
+            <TextView
+                android:padding="8dp"
+                android:text="Uniforme en Correcto Estado" />
+            <CheckBox
+                android:id="@+id/checkBoxOk1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <CheckBox
+                android:id="@+id/checkBoxNOOk1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <CheckBox
+                android:id="@+id/checkBoxNA1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </TableRow>
+
+        <!-- Fila 2 -->
+        <TableRow>
+            <TextView
+                android:text="Uniforme No Alterado"
+                android:padding="8dp" />
+            <CheckBox
+                android:id="@+id/checkBoxOk2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNOOk2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNA2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </TableRow>
+
+        <!-- Fila 3 -->
+        <TableRow>
+            <TextView
+                android:text="Uso de Guantes"
+                android:padding="8dp" />
+            <CheckBox
+                android:id="@+id/checkBoxOk3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNOOk3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNA3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </TableRow>
+
+        <!-- Fila 4 -->
+        <TableRow>
+            <TextView
+                android:text="Cofia Bien Colocada"
+                android:padding="8dp" />
+            <CheckBox
+                android:id="@+id/checkBoxOk4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNOOk4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNA4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </TableRow>
+
+        <!-- Fila 5 -->
+        <TableRow>
+            <TextView
+                android:text="Barbijo/Barbero Bien Colocado"
+                android:padding="8dp" />
+            <CheckBox
+                android:id="@+id/checkBoxOk5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNOOk5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNA5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </TableRow>
+
+        <!-- Fila 6 -->
+        <TableRow>
+            <TextView
+                android:text="Sin Alhajas"
+                android:padding="8dp" />
+            <CheckBox
+                android:id="@+id/checkBoxOk6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNOOk6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNA6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </TableRow>
+
+        <!-- Fila 7 -->
+        <TableRow>
+            <TextView
+                android:text="Maquillaje/Perfume"
+                android:padding="8dp" />
+            <CheckBox
+                android:id="@+id/checkBoxOk7"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNOOk7"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNA7"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </TableRow>
+
+        <!-- Fila 8 -->
+        <TableRow>
+            <TextView
+                android:text="Uso Correcto de Lentes"
+                android:padding="8dp" />
+            <CheckBox
+                android:id="@+id/checkBoxOk8"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNOOk8"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNA8"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </TableRow>
+
+        <!-- Fila 9 -->
+        <TableRow>
+            <TextView
+                android:text="No Consumo de Alimentos"
+                android:padding="8dp" />
+            <CheckBox
+                android:id="@+id/checkBoxOk9"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNOOk9"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNA9"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </TableRow>
+
+        <!-- Fila 10 -->
+        <TableRow>
+            <TextView
+                android:text="Orden/Limpieza"
+                android:padding="8dp" />
+            <CheckBox
+                android:id="@+id/checkBoxOk10"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNOOk10"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNA10"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </TableRow>
+
+        <!-- Fila 11 -->
+        <TableRow>
+            <TextView
+                android:text="Productos Químicos"
+                android:padding="8dp" />
+            <CheckBox
+                android:id="@+id/checkBoxOk11"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNOOk11"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+            <CheckBox
+                android:id="@+id/checkBoxNA11"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </TableRow>
+    </TableLayout>
+
+    <ImageButton
+        android:id="@+id/imgBtnGuardar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="60dp"
+        android:layout_marginTop="30dp"
+        android:layout_marginEnd="7dp"
+        android:src="@drawable/ic_save2"
+        android:background="@android:color/transparent"
+        app:layout_constraintEnd_toStartOf="@+id/imgBtnCancelar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tableItems" />
+
+    <ImageButton
+        android:id="@+id/imgBtnCancelar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="30dp"
+        android:layout_marginEnd="28dp"
+        android:src="@drawable/ic_cancel"
+        android:background="@android:color/transparent"
+        app:layout_constraintEnd_toStartOf="@+id/imgBtnFirma"
+        app:layout_constraintStart_toEndOf="@+id/imgBtnGuardar"
+        app:layout_constraintTop_toBottomOf="@+id/tableItems" />
+
+    <ImageButton
+        android:id="@+id/imgBtnFirma"
+        android:layout_width="87dp"
+        android:layout_height="77dp"
+        android:layout_marginTop="28dp"
+        android:layout_marginEnd="20dp"
+        android:src="@drawable/ic_firma2"
+        android:background="@android:color/transparent"
+        app:layout_constraintEnd_toStartOf="@+id/imgBtnComentarios"
+        app:layout_constraintStart_toEndOf="@+id/imgBtnCancelar"
+        app:layout_constraintTop_toBottomOf="@+id/tableItems" />
+
+    <ImageButton
+        android:id="@+id/imgBtnComentarios"
+        android:layout_width="77dp"
+        android:layout_height="71dp"
+        android:layout_marginTop="30dp"
+        android:layout_marginEnd="35dp"
+        android:src="@drawable/ic_coment"
+        android:background="@android:color/transparent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.941"
+        app:layout_constraintStart_toEndOf="@+id/imgBtnFirma"
+        app:layout_constraintTop_toBottomOf="@+id/tableItems" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
