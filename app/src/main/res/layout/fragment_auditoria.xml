@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.home.AuditoriaFragment">
+    tools:context=".ui.auditoria.AuditoriaFragment">
 
     <!-- Campo Operario y Fecha tal como lo tienes -->
     <TextView
@@ -16,16 +16,18 @@
         android:text="Operario:"
         android:textAlignment="center"
         android:textSize="16dp"
+        android:textColor="@android:color/black"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <EditText
-        android:id="@+id/etCampoNomb"
+    <TextView
+        android:id="@+id/tvCampoNomb"
         android:layout_width="128dp"
         android:layout_height="40dp"
-        android:layout_marginTop="30dp"
+        android:layout_marginTop="32dp"
         android:ems="15"
         android:inputType="text"
+        android:textColor="@android:color/black"
         android:textSize="16dp"
         app:layout_constraintStart_toEndOf="@+id/tvNombOp"
         app:layout_constraintTop_toTopOf="parent" />
@@ -39,7 +41,8 @@
         android:text="Fecha: "
         android:textAlignment="center"
         android:textSize="16dp"
-        app:layout_constraintStart_toEndOf="@+id/etCampoNomb"
+        android:textColor="@android:color/black"
+        app:layout_constraintStart_toEndOf="@+id/tvCampoNomb"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
@@ -50,6 +53,7 @@
         android:layout_marginTop="33dp"
         android:layout_marginEnd="73dp"
         android:textSize="16dp"
+        android:textColor="@android:color/black"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/tvFecha"
         app:layout_constraintTop_toTopOf="parent" />
@@ -61,7 +65,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:stretchColumns="1,2,3"
-        android:shrinkColumns="2"
+        android:shrinkColumns="1"
         android:divider="?android:dividerHorizontal"
         android:showDividers="middle"
         app:layout_constraintTop_toBottomOf="@+id/tvCampoFecha"
@@ -70,245 +74,555 @@
 
         <!-- Cabecera de la tabla -->
         <TableRow
-            android:background="@android:color/darker_gray"
-            android:layout_margin="1dp">
+            android:background="@color/darker_black"
+            android:layout_margin="1dp"
+            android:layout_weight="1">
 
             <TextView
                 android:text="Item a Evaluar"
                 android:padding="8dp"
-                android:layout_gravity="center"
-                android:textStyle="bold" />
+                android:gravity="center"
+                android:layout_weight="3.5"
+                android:layout_width="0dp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"/>
             <TextView
                 android:text="OK"
+                android:layout_width="0dp"
+                android:layout_weight="1"
                 android:layout_gravity="center"
+                android:gravity="center"
                 android:textStyle="bold"
+                android:textColor="@android:color/white"
                 android:padding="4dp"/>
 
             <TextView
                 android:text="NO OK"
-                android:layout_width="68dp"
-                android:layout_height="wrap_content"
+                android:layout_width="0dp"
+                android:layout_weight="1"
                 android:layout_gravity="center"
-                android:textStyle="bold" />
+                android:gravity="center"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"/>
 
             <TextView
                 android:text="N/A"
-                android:layout_width="68dp"
+                android:layout_width="0dp"
+                android:layout_weight="1"
                 android:layout_gravity="center"
+                android:gravity="center"
                 android:padding="8dp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:textColor="@android:color/white"/>
         </TableRow>
 
         <!-- Fila 1 -->
-        <TableRow>
+        <TableRow
+                android:gravity="center_vertical"
+                android:layout_margin="1dp"
+                android:tag="1">
 
             <TextView
                 android:padding="8dp"
-                android:text="Uniforme en Correcto Estado" />
-            <CheckBox
-                android:id="@+id/checkBoxOk1"
+                android:text="Uniforme en Correcto Estado"
+                android:textColor="@android:color/black"/>
+            <RadioGroup
+                android:id="@+id/radioGroup1"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_horizontal"
+                android:layout_gravity="center"
+                android:layout_weight="1">
 
-            <CheckBox
-                android:id="@+id/checkBoxNOOk1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                <RadioButton
+                    android:id="@+id/radioButtonOk1"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="40dp"
+                    android:background="@drawable/square_radio_button"/>
 
-            <CheckBox
-                android:id="@+id/checkBoxNA1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                <RadioButton
+                    android:id="@+id/radioButtonNoOk1"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginEnd="47dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNA1"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:background="@drawable/square_radio_button"/>
+
+            </RadioGroup>
         </TableRow>
 
         <!-- Fila 2 -->
-        <TableRow>
+        <TableRow
+                android:gravity="center_vertical"
+                android:layout_margin="1dp"
+                android:tag="2">
             <TextView
                 android:text="Uniforme No Alterado"
-                android:padding="8dp" />
-            <CheckBox
-                android:id="@+id/checkBoxOk2"
+                android:padding="8dp"
+                android:textColor="@android:color/black"/>
+            <RadioGroup
+                android:id="@+id/radioGroup2"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNOOk2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNA2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_weight="1">
+
+                <RadioButton
+                    android:id="@+id/radioButtonOk2"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="40dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNoOk2"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginEnd="47dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNA2"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:background="@drawable/square_radio_button"/>
+            </RadioGroup>
         </TableRow>
 
         <!-- Fila 3 -->
-        <TableRow>
+        <TableRow
+                android:gravity="center_vertical"
+                android:layout_margin="1dp"
+                android:tag="3">
             <TextView
                 android:text="Uso de Guantes"
-                android:padding="8dp" />
-            <CheckBox
-                android:id="@+id/checkBoxOk3"
+                android:padding="8dp"
+                android:textColor="@android:color/black"/>
+            <RadioGroup
+                android:id="@+id/radioGroup3"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNOOk3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNA3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_weight="1">
+
+                <RadioButton
+                    android:id="@+id/radioButtonOk3"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="40dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNoOk3"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginEnd="47dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNA3"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:background="@drawable/square_radio_button"/>
+            </RadioGroup>
         </TableRow>
 
         <!-- Fila 4 -->
-        <TableRow>
+        <TableRow
+                android:gravity="center_vertical"
+                android:layout_margin="1dp"
+                android:tag="4">
             <TextView
                 android:text="Cofia Bien Colocada"
-                android:padding="8dp" />
-            <CheckBox
-                android:id="@+id/checkBoxOk4"
+                android:padding="8dp"
+                android:textColor="@android:color/black"/>
+            <RadioGroup
+                android:id="@+id/radioGroup4"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNOOk4"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNA4"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_weight="1">
+
+                <RadioButton
+                    android:id="@+id/radioButtonOk4"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="40dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNoOk4"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginEnd="47dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNA4"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:background="@drawable/square_radio_button"/>
+            </RadioGroup>
         </TableRow>
 
         <!-- Fila 5 -->
-        <TableRow>
+        <TableRow
+                android:gravity="center_vertical"
+                android:layout_margin="1dp"
+                android:tag="5">
             <TextView
                 android:text="Barbijo/Barbero Bien Colocado"
-                android:padding="8dp" />
-            <CheckBox
-                android:id="@+id/checkBoxOk5"
+                android:padding="8dp"
+                android:textColor="@android:color/black"/>
+            <RadioGroup
+                android:id="@+id/radioGroup5"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNOOk5"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNA5"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_weight="1">
+
+                <RadioButton
+                    android:id="@+id/radioButtonOk5"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="40dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNoOk5"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginEnd="47dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNA5"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:background="@drawable/square_radio_button"/>
+            </RadioGroup>
         </TableRow>
 
         <!-- Fila 6 -->
-        <TableRow>
+        <TableRow
+                android:gravity="center_vertical"
+                android:layout_margin="1dp"
+                android:tag="6">
             <TextView
                 android:text="Sin Alhajas"
-                android:padding="8dp" />
-            <CheckBox
-                android:id="@+id/checkBoxOk6"
+                android:padding="8dp"
+                android:textColor="@android:color/black"/>
+            <RadioGroup
+                android:id="@+id/radioGroup6"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNOOk6"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNA6"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_weight="1">
+
+                <RadioButton
+                    android:id="@+id/radioButtonOk6"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="40dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNoOk6"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginEnd="47dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNA6"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:background="@drawable/square_radio_button"/>
+            </RadioGroup>
         </TableRow>
 
         <!-- Fila 7 -->
-        <TableRow>
+        <TableRow
+                android:gravity="center_vertical"
+                android:layout_margin="1dp"
+                android:tag="7">
             <TextView
                 android:text="Maquillaje/Perfume"
-                android:padding="8dp" />
-            <CheckBox
-                android:id="@+id/checkBoxOk7"
+                android:padding="8dp"
+                android:textColor="@android:color/black"/>
+            <RadioGroup
+                android:id="@+id/radioGroup7"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNOOk7"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNA7"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_weight="1">
+
+                <RadioButton
+                    android:id="@+id/radioButtonOk7"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="40dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNoOk7"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginEnd="47dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNA7"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:background="@drawable/square_radio_button"/>
+            </RadioGroup>
         </TableRow>
 
         <!-- Fila 8 -->
-        <TableRow>
+        <TableRow
+                android:gravity="center_vertical"
+                android:layout_margin="1dp"
+                android:tag="8">
             <TextView
                 android:text="Uso Correcto de Lentes"
-                android:padding="8dp" />
-            <CheckBox
-                android:id="@+id/checkBoxOk8"
+                android:padding="8dp"
+                android:textColor="@android:color/black"/>
+            <RadioGroup
+                android:id="@+id/radioGroup8"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNOOk8"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNA8"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_weight="1">
+
+                <RadioButton
+                    android:id="@+id/radioButtonOk8"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="40dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNoOk8"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginEnd="47dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNA8"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:background="@drawable/square_radio_button"/>
+            </RadioGroup>
         </TableRow>
 
         <!-- Fila 9 -->
-        <TableRow>
+        <TableRow
+                android:gravity="center_vertical"
+                android:layout_margin="1dp"
+                android:tag="9">
             <TextView
                 android:text="No Consumo de Alimentos"
-                android:padding="8dp" />
-            <CheckBox
-                android:id="@+id/checkBoxOk9"
+                android:padding="8dp"
+                android:textColor="@android:color/black"/>
+            <RadioGroup
+                android:id="@+id/radioGroup9"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNOOk9"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNA9"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_weight="1">
+
+                <RadioButton
+                    android:id="@+id/radioButtonOk9"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="40dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNoOk9"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginEnd="47dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNA9"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:background="@drawable/square_radio_button"/>
+            </RadioGroup>
         </TableRow>
 
         <!-- Fila 10 -->
-        <TableRow>
+        <TableRow
+                android:gravity="center_vertical"
+                android:layout_margin="1dp"
+                android:tag="10">
             <TextView
                 android:text="Orden/Limpieza"
-                android:padding="8dp" />
-            <CheckBox
-                android:id="@+id/checkBoxOk10"
+                android:padding="8dp"
+                android:textColor="@android:color/black"/>
+            <RadioGroup
+                android:id="@+id/radioGroup10"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNOOk10"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNA10"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_weight="1">
+
+                <RadioButton
+                    android:id="@+id/radioButtonOk10"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="40dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNoOk10"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginEnd="47dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNA10"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:background="@drawable/square_radio_button"/>
+            </RadioGroup>
         </TableRow>
 
         <!-- Fila 11 -->
-        <TableRow>
+        <TableRow
+                android:gravity="center_vertical"
+                android:layout_margin="1dp"
+                android:tag="11">
             <TextView
                 android:text="Productos Químicos"
-                android:padding="8dp" />
-            <CheckBox
-                android:id="@+id/checkBoxOk11"
+                android:padding="8dp"
+                android:textColor="@android:color/black"/>
+            <RadioGroup
+                android:id="@+id/radioGroup11"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNOOk11"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-            <CheckBox
-                android:id="@+id/checkBoxNA11"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_weight="1">
+
+                <RadioButton
+                    android:id="@+id/radioButtonOk11"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="40dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNoOk11"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:layout_marginEnd="47dp"
+                    android:background="@drawable/square_radio_button"/>
+
+                <RadioButton
+                    android:id="@+id/radioButtonNA11"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:button="@null"
+                    android:layout_gravity="center"
+                    android:background="@drawable/square_radio_button"/>
+            </RadioGroup>
         </TableRow>
     </TableLayout>
 

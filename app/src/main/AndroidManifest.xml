@@ -21,22 +21,24 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AuditoriaBPM"
+        android:theme="@style/Base.Theme.AuditoriaBPM"
         tools:targetApi="31">
+
         <activity
             android:name=".MenuActivity"
-            android:exported="false"
-            android:label="@string/title_menu_principal"
-            android:theme="@style/Theme.AuditoriaBPM.NoActionBar" />
+            android:exported="false"/>
+
         <activity
             android:name=".LoginActivity"
-            android:exported="true">
+            android:exported="true"
+            android:label="@string/title_menu_principal"
+            android:theme="@style/Base.Theme.AuditoriaBPM">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
@@ -47,4 +49,5 @@
                 android:resource="@xml/file_paths" />
         </provider>
     </application>
+
 </manifest>

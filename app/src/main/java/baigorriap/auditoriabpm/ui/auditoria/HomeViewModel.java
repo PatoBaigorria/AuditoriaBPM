@@ -1,17 +1,14 @@
-package baigorriap.auditoriabpm.ui.home;
+package baigorriap.auditoriabpm.ui.auditoria;
 
 import android.app.Application;
 import android.util.Log;
-import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +27,10 @@ public class HomeViewModel extends AndroidViewModel {
     private MutableLiveData<List<Actividad>> mListaActividad;
     private MutableLiveData<List<Linea>> mListaLinea;
     private MutableLiveData<Operario> mOperario;
+    private MutableLiveData<Integer> mIdSupervisor;
+    private MutableLiveData<Integer> mIdOperario;
+    private MutableLiveData<Integer> mIdActividad;
+    private MutableLiveData<Integer> mIdLinea;
     private MutableLiveData<String> mErrorMessage;
     private final Application application;
 
@@ -82,6 +83,38 @@ public class HomeViewModel extends AndroidViewModel {
         }
         return mOperario;
     }
+    public LiveData<Integer> getMIdSupervisor() {
+        if (mIdSupervisor == null) {
+            mIdSupervisor = new MutableLiveData<>();
+        }
+        return mIdSupervisor;
+    }
+    public LiveData<Integer> getMIdOperario() {
+        if (mIdOperario == null) {
+            mIdOperario = new MutableLiveData<>();
+        }
+        return mIdOperario;
+    }
+    public LiveData<Integer> getMIdActividad() {
+        if (mIdActividad == null) {
+            mIdActividad = new MutableLiveData<>();
+        }
+        return mIdActividad;
+    }
+    public LiveData<Integer> getMIdLinea() {
+        if (mIdLinea == null) {
+            mIdLinea = new MutableLiveData<>();
+        }
+        return mIdLinea;
+    }
+
+    // Método en el ViewModel para cargar el supervisor
+    public void cargarSupervisorPorId(int idSupervisor) {
+        // Supongamos que obtienes el supervisor de una API o base de datos
+        // Aquí, simplemente se asigna el ID para demostrar
+        this.mIdSupervisor.setValue(idSupervisor);
+    }
+
 
     public void cargarDatosPorLegajo(int legajo) {
         if (legajo <= 0) { // Validación simple para legajo

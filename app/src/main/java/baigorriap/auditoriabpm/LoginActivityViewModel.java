@@ -64,19 +64,29 @@ public class LoginActivityViewModel extends AndroidViewModel {
             @Override
             public void onResponse(Call<Supervisor> call, Response<Supervisor> response) {
                 if (response.isSuccessful()) {
-                    editor.putString("nombre completo", response.body().toString());
-                    editor.putInt("legajo", response.body().getLegajo());
-                    editor.apply();
+                    Supervisor supervisor = response.body();
+                    if (supervisor != null) {
+                        Log.d("SupervisorData", "ID: " + supervisor.getIdSupervisor());
+                        Log.d("SupervisorData", "Nombre: " + supervisor.getNombre() + " " + supervisor.getApellido());
+                        // Guardar los datos
+                        editor.putInt("idSupervisor", supervisor.getIdSupervisor());
+                        editor.putString("nombre completo", supervisor.getNombre() + " " + supervisor.getApellido());
+                        editor.putInt("legajo", supervisor.getLegajo());
+                        editor.apply();
 
-                    // Navegar a MenuActivity aquí, después de guardar los datos
-                    Intent intent = new Intent(getApplication(), MenuActivity.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                    getApplication().startActivity(intent);
+                        // Navegar a MenuActivity aquí
+                        Intent intent = new Intent(getApplication(), MenuActivity.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        getApplication().startActivity(intent);
+                    } else {
+                        Log.d("SupervisorData", "Respuesta nula del supervisor.");
+                    }
                 } else {
                     Log.d("salida", response.message());
                     Toast.makeText(getApplication(), "Error al obtener perfil", Toast.LENGTH_LONG).show();
                 }
             }
+
 
             @Override
             public void onFailure(Call<Supervisor> call, Throwable throwable) {

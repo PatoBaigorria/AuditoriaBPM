@@ -1,8 +1,11 @@
-package baigorriap.auditoriabpm.ui.home;
+package baigorriap.auditoriabpm.ui.auditoria;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,13 +35,20 @@ public class HomeFragment extends Fragment {
     private TextView tvNombreOp;
     private ArrayAdapter<Actividad> actividadAdapter;
     private ArrayAdapter<Linea> lineaAdapter;
-
+    private int idSupervisor;
+    private int idOperario;
+    private int idActividad;
+    private int idLinea;
+    private SharedPreferences sharedPreferences;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
         vm = new ViewModelProvider(this).get(HomeViewModel.class);
+
+        sharedPreferences = getActivity().getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
+        idSupervisor = sharedPreferences.getInt("idSupervisor", 0); // Recuperar el idSupervisor
 
         // Inicializa los Spinners
         spnActividad = binding.spnActividad;
@@ -73,9 +83,7 @@ public class HomeFragment extends Fragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (s.length() == 0 || s.length() <= 5) {
-                    // Limpiar el TextView del nombre del operario
                     tvNombreOp.setText("");
-                    // Restablecer los spinners a su valor de hint
                     vm.limpiarSpinnersConHint();
                 }
             }
@@ -94,13 +102,11 @@ public class HomeFragment extends Fragment {
                     int legajo = Integer.parseInt(legajoInput);
                     vm.cargarOperarioPorLegajo(legajo);
                     vm.cargarDatosPorLegajo(legajo); // Cargar datos del operario por legajo
-
+                    vm.cargarSupervisorPorId(idSupervisor);
                 } catch (NumberFormatException e) {
-                    // Si el legajo no es un número válido
                     Toast.makeText(getContext(), "Por favor, introduce un número de legajo válido", Toast.LENGTH_SHORT).show();
                 }
             } else {
-                // Limpia los spinners si el legajo está vacío
                 vm.limpiarSpinnersConHint();
             }
             return false;
@@ -119,7 +125,6 @@ public class HomeFragment extends Fragment {
                     actividadAdapter.notifyDataSetChanged();
                 }
             } else {
-                // Si la lista de actividades está vacía, limpiar el spinner
                 vm.limpiarSpinnersConHint();
                 if (actividadAdapter != null) {
                     actividadAdapter.clear();
@@ -127,7 +132,6 @@ public class HomeFragment extends Fragment {
                 }
             }
         });
-
 
         // Observa la lista de líneas
         vm.getMListaLinea().observe(getViewLifecycleOwner(), lineas -> {
@@ -142,7 +146,6 @@ public class HomeFragment extends Fragment {
                     lineaAdapter.notifyDataSetChanged();
                 }
             } else {
-                // Si la lista de líneas está vacía, limpiar el spinner
                 vm.limpiarSpinnersConHint();
                 if (lineaAdapter != null) {
                     lineaAdapter.clear();
@@ -150,14 +153,84 @@ public class HomeFragment extends Fragment {
                 }
             }
         });
-        // Configuración del botón "Siguiente"
-        binding.btSiguiente.setOnClickListener(v -> {
-            NavController navController = Navigation.findNavController(v);
-            navController.navigate(R.id.nav_auditoria, null, new NavOptions.Builder()
-                    .setPopUpTo(R.id.nav_home, true) // Esto elimina HomeFragment del backstack
-                    .build());
+
+
+
+        // Observa los valores del ViewModel y guárdalos en las variables cuando cambien
+        vm.getMIdSupervisor().observe(getViewLifecycleOwner(), id -> {
+            if (id != null) {
+                idSupervisor = id; // Aquí id es un Integer, no un objeto con método
+                Log.d("HomeFragment", "idSupervisor asignado: " + idSupervisor);
+            } else {
+                Log.d("HomeFragment", "El ID del supervisor es nulo");
+            }
         });
 
+        vm.getMOperario().observe(getViewLifecycleOwner(), operario -> {
+            if (operario != null) {
+                idOperario = operario.getIdOperario(); // Asegúrate de que tengas un método getId() en tu modelo de Operario
+                tvNombreOp.setText(operario.getNombreCompleto());
+                Log.d("HomeFragment", "idOperario asignado: " + idOperario);
+            } else {
+                Toast.makeText(getContext(), "El Legajo NO Existe", Toast.LENGTH_LONG).show();
+                tvNombreOp.setText(""); // Limpiar el nombre si no se encuentra
+            }
+        });
+
+        vm.getMIdActividad().observe(getViewLifecycleOwner(), id -> {
+            if (id != null) {
+                idActividad = id;
+            }
+        });
+
+        vm.getMIdLinea().observe(getViewLifecycleOwner(), id -> {
+            if (id != null) {
+                idLinea = id;
+            }
+        });
+
+        // Configuración del botón "Siguiente"
+        binding.btSiguiente.setOnClickListener(v -> {
+            String nombreOperario = tvNombreOp.getText().toString();
+            if (nombreOperario.isEmpty()) {
+                Toast.makeText(getContext(), "El nombre del operario está vacío", Toast.LENGTH_SHORT).show();
+                return; // Evita navegar si no hay nombre
+            }
+            // Toma el valor seleccionado directamente de los spinners
+            Actividad selectedActividad = (Actividad) spnActividad.getSelectedItem();
+            Linea selectedLinea = (Linea) spnLinea.getSelectedItem();
+
+            // Asegúrate de que el elemento seleccionado no sea nulo
+            if (selectedActividad != null) {
+                idActividad = selectedActividad.getIdActividad();
+            } else {
+                Toast.makeText(getContext(), "Por favor selecciona una actividad", Toast.LENGTH_SHORT).show();
+                return; // Evita navegar si no hay actividad seleccionada
+            }
+
+            if (selectedLinea != null) {
+                idLinea = selectedLinea.getIdLinea();
+            } else {
+                Toast.makeText(getContext(), "Por favor selecciona una línea", Toast.LENGTH_SHORT).show();
+                return; // Evita navegar si no hay línea seleccionada
+            }
+
+
+            // Crea un Bundle y añade el nombre del operario y los IDs
+            Bundle bundle = new Bundle();
+            bundle.putInt("idOperario", idOperario);
+            bundle.putString("nombreOperario", nombreOperario); // Agrega el nombre
+            bundle.putInt("idSupervisor", idSupervisor);
+            bundle.putInt("idActividad", idActividad);
+            bundle.putInt("idLinea", idLinea);
+
+
+            // Navega a AuditoriaFragment pasando el bundle
+            NavController navController = Navigation.findNavController(v);
+            navController.navigate(R.id.nav_auditoria, bundle, new NavOptions.Builder()
+                    .setPopUpTo(R.id.nav_home, true) // Elimina HomeFragment del backstack
+                    .build());
+        });
 
         return root;
     }

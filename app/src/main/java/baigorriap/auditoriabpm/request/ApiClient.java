@@ -9,12 +9,17 @@ import java.util.HashSet;
 import java.util.List;
 
 import baigorriap.auditoriabpm.model.Actividad;
+import baigorriap.auditoriabpm.model.AltaAuditoriaRequest;
+import baigorriap.auditoriabpm.model.Auditoria;
+import baigorriap.auditoriabpm.model.AuditoriaItemBPM;
 import baigorriap.auditoriabpm.model.Linea;
 import baigorriap.auditoriabpm.model.Operario;
 import baigorriap.auditoriabpm.model.Supervisor;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.http.Body;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
@@ -65,6 +70,8 @@ public class ApiClient {
         @GET("Operarios/validar-legajo/{legajo}")
         Call<Boolean> verificarLegajo(@Header("Authorization") String token, @Path("legajo") int legajo);
 
+        @POST("Auditorias/alta-auditoria-completa")
+        Call<ResponseBody> darDeAltaAuditoria(@Header("Authorization") String token, @Body AltaAuditoriaRequest request);
 
 
     }

@@ -10,19 +10,19 @@ public class Auditoria implements Serializable {
     private int idActividad;
     private int idLinea;
     private Date fecha;
-    private String comentarios;
+    private String comentario;
 
     public Auditoria() {
     }
 
-    public Auditoria(int idAuditoria, int idSupervisor, int idOperario, int idActividad, int idLinea, Date fecha, String comentarios) {
+    public Auditoria(int idAuditoria, int idSupervisor, int idOperario, int idActividad, int idLinea, Date fecha, String comentario) {
         this.idAuditoria = idAuditoria;
         this.idSupervisor = idSupervisor;
         this.idOperario = idOperario;
         this.idActividad = idActividad;
         this.idLinea = idLinea;
         this.fecha = fecha;
-        this.comentarios = comentarios;
+        this.comentario = comentario;
     }
 
     public int getIdAuditoria() {
@@ -73,11 +73,11 @@ public class Auditoria implements Serializable {
         this.fecha = fecha;
     }
 
-    public String getComentarios() {
-        return comentarios;
+    public String getComentario() {
+        return comentario;
     }
 
-    public void setComentarios(String comentarios) {
-        this.comentarios = comentarios;
+    public void setComentario(String comentario) {
+        this.comentario = comentario;
     }
 }

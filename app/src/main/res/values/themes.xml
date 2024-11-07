@@ -1,18 +1,32 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.AuditoriaBPM" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
-    </style>
-
-    <style name="Theme.AuditoriaBPM" parent="Base.Theme.AuditoriaBPM" />
-
-    <style name="Theme.AuditoriaBPM.NoActionBar">
+    <style name="Base.Theme.AuditoriaBPM" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@color/purple_500</item>
+        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <!-- Secondary brand color. -->
+        <item name="colorSecondary">@color/teal_200</item>
+        <item name="colorSecondaryVariant">@color/teal_700</item>
+        <item name="colorOnSecondary">@color/black</item>
+        <!-- Status bar color. -->
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+        <!-- Aquí no se necesita actionBarStyle ya que estamos usando NoActionBar -->
     </style>
 
-    <style name="Theme.MyApplication.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <style name="AppActionBar" parent="Widget.AppCompat.ActionBar">
+        <!-- Fondo de la ActionBar -->
+        <item name="android:background">@color/purple_700</item>
+        <!-- Estilo del título de la ActionBar -->
+        <item name="android:titleTextStyle">@style/ActionBarTitleText</item>
+    </style>
 
-    <style name="Theme.MyApplication.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+    <style name="ActionBarTitleText" parent="TextAppearance.AppCompat.Widget.ActionBar.Title">
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textSize">20sp</item>
+    </style>
+
+    <style name="Base.Theme.AuditoriaBPM.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 </resources>
