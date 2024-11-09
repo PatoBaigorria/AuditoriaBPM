@@ -74,28 +74,44 @@ public class AuditoriaFragment extends Fragment {
         binding.tvCampoFecha.setText(formattedDate);
 
         // Lógica para iterar sobre los RadioGroups en el TableLayout
-        for (int i = 0; i < tableLayout.getChildCount(); i++) {
+        for (int i = 1; i < tableLayout.getChildCount(); i++) {  // Comienza desde 1 para evitar el encabezado
             TableRow row = (TableRow) tableLayout.getChildAt(i);
 
-            // Usar IDs únicos para acceder a cada RadioGroup
-            final RadioGroup radioGroup = row.findViewById(getResources().getIdentifier("radioGroup" + (i + 1), "id", requireContext().getPackageName()));
+            if (row != null) {
+                Log.d("RadioGroupDebug", "Fila " + i + " encontrada: " + row.toString());
 
-            if (radioGroup != null) {
-                // Configurar el listener para cada RadioGroup
-                radioGroup.setOnCheckedChangeListener((group, checkedId) -> {
-                    // Manejar el cambio de selección aquí
-                    if (checkedId != -1) {
-                        RadioButton selectedRadioButton = row.findViewById(checkedId);
-                        String tag = selectedRadioButton.getTag().toString();
-                        AuditoriaItemBPM.EstadoEnum estado = AuditoriaItemBPM.EstadoEnum.valueOf(tag);
+                // Asegúrate de que el RadioGroup tenga un ID como radioGroup1, radioGroup2, etc.
+                String radioGroupId = "radioGroup" + i;  // Usamos la numeración adecuada para las filas de datos
+                int resId = getResources().getIdentifier(radioGroupId, "id", requireContext().getPackageName());
+                RadioGroup radioGroup = row.findViewById(resId);
 
-                        // Llama a tu método en el ViewModel
-                        int idItem = obtenerIdDelItem(row); // Cambia a tu método en ViewModel
-                        auditoriaViewModel.seleccionarEstado(idItem, estado); // Cambia a tu método en ViewModel
-                    }
-                });
+                if (radioGroup != null) {
+                    Log.d("RadioGroupDebug", "RadioGroup encontrado: " + radioGroupId);
+
+                    // Configurar el listener para cada RadioGroup
+                    radioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+                        if (checkedId != -1) {
+                            RadioButton selectedRadioButton = row.findViewById(checkedId);
+                            String tag = selectedRadioButton.getTag().toString();
+                            Log.d("RadioGroupDebug", "RadioButton seleccionado: " + tag);  // Verificación del log
+
+                            // Obtener el id del item de la fila
+                            int idItem = obtenerIdDelItem(row);
+                            if (idItem != -1) {
+                                // Llama a tu método en el ViewModel para manejar la selección
+                                AuditoriaItemBPM.EstadoEnum estado = AuditoriaItemBPM.EstadoEnum.valueOf(tag);
+                                Log.d("RadioGroupDebug", "Estado seleccionado: " + estado);  // Verificación del log
+                                auditoriaViewModel.seleccionarEstado(idItem, estado);  // Llamada al ViewModel
+                            }
+                        }
+                    });
+                } else {
+                    Log.d("RadioGroupDebug", "No se encontró RadioGroup con ID: " + radioGroupId);
+                }
             }
         }
+
+
 
         // Observadores para los LiveData del ViewModel
         setupObservers();
