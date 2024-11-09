@@ -143,6 +143,7 @@
                     android:layout_gravity="center"
                     android:layout_marginStart="12dp"
                     android:layout_marginEnd="40dp"
+                    android:tag="OK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -152,6 +153,7 @@
                     android:button="@null"
                     android:layout_gravity="center"
                     android:layout_marginEnd="47dp"
+                    android:tag="NOOK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -160,6 +162,7 @@
                     android:layout_height="20dp"
                     android:button="@null"
                     android:layout_gravity="center"
+                    android:tag="NA"
                     android:background="@drawable/square_radio_button"/>
 
             </RadioGroup>
@@ -190,6 +193,7 @@
                     android:layout_gravity="center"
                     android:layout_marginStart="12dp"
                     android:layout_marginEnd="40dp"
+                    android:tag="OK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -199,6 +203,7 @@
                     android:button="@null"
                     android:layout_gravity="center"
                     android:layout_marginEnd="47dp"
+                    android:tag="NOOK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -207,6 +212,7 @@
                     android:layout_height="20dp"
                     android:button="@null"
                     android:layout_gravity="center"
+                    android:tag="NA"
                     android:background="@drawable/square_radio_button"/>
             </RadioGroup>
         </TableRow>
@@ -236,6 +242,7 @@
                     android:layout_gravity="center"
                     android:layout_marginStart="12dp"
                     android:layout_marginEnd="40dp"
+                    android:tag="OK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -245,6 +252,7 @@
                     android:button="@null"
                     android:layout_gravity="center"
                     android:layout_marginEnd="47dp"
+                    android:tag="NOOK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -253,6 +261,7 @@
                     android:layout_height="20dp"
                     android:button="@null"
                     android:layout_gravity="center"
+                    android:tag="NA"
                     android:background="@drawable/square_radio_button"/>
             </RadioGroup>
         </TableRow>
@@ -282,6 +291,7 @@
                     android:layout_gravity="center"
                     android:layout_marginStart="12dp"
                     android:layout_marginEnd="40dp"
+                    android:tag="OK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -291,6 +301,7 @@
                     android:button="@null"
                     android:layout_gravity="center"
                     android:layout_marginEnd="47dp"
+                    android:tag="NOOK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -299,6 +310,7 @@
                     android:layout_height="20dp"
                     android:button="@null"
                     android:layout_gravity="center"
+                    android:tag="NA"
                     android:background="@drawable/square_radio_button"/>
             </RadioGroup>
         </TableRow>
@@ -328,6 +340,7 @@
                     android:layout_gravity="center"
                     android:layout_marginStart="12dp"
                     android:layout_marginEnd="40dp"
+                    android:tag="OK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -337,6 +350,7 @@
                     android:button="@null"
                     android:layout_gravity="center"
                     android:layout_marginEnd="47dp"
+                    android:tag="NOOK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -345,6 +359,7 @@
                     android:layout_height="20dp"
                     android:button="@null"
                     android:layout_gravity="center"
+                    android:tag="NA"
                     android:background="@drawable/square_radio_button"/>
             </RadioGroup>
         </TableRow>
@@ -374,6 +389,7 @@
                     android:layout_gravity="center"
                     android:layout_marginStart="12dp"
                     android:layout_marginEnd="40dp"
+                    android:tag="OK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -383,6 +399,7 @@
                     android:button="@null"
                     android:layout_gravity="center"
                     android:layout_marginEnd="47dp"
+                    android:tag="NOOK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -391,6 +408,7 @@
                     android:layout_height="20dp"
                     android:button="@null"
                     android:layout_gravity="center"
+                    android:tag="NA"
                     android:background="@drawable/square_radio_button"/>
             </RadioGroup>
         </TableRow>
@@ -420,6 +438,7 @@
                     android:layout_gravity="center"
                     android:layout_marginStart="12dp"
                     android:layout_marginEnd="40dp"
+                    android:tag="OK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -429,6 +448,7 @@
                     android:button="@null"
                     android:layout_gravity="center"
                     android:layout_marginEnd="47dp"
+                    android:tag="NOOK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -437,6 +457,7 @@
                     android:layout_height="20dp"
                     android:button="@null"
                     android:layout_gravity="center"
+                    android:tag="NA"
                     android:background="@drawable/square_radio_button"/>
             </RadioGroup>
         </TableRow>
@@ -466,6 +487,7 @@
                     android:layout_gravity="center"
                     android:layout_marginStart="12dp"
                     android:layout_marginEnd="40dp"
+                    android:tag="OK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -475,6 +497,7 @@
                     android:button="@null"
                     android:layout_gravity="center"
                     android:layout_marginEnd="47dp"
+                    android:tag="NOOK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -483,6 +506,7 @@
                     android:layout_height="20dp"
                     android:button="@null"
                     android:layout_gravity="center"
+                    android:tag="NA"
                     android:background="@drawable/square_radio_button"/>
             </RadioGroup>
         </TableRow>
@@ -512,6 +536,7 @@
                     android:layout_gravity="center"
                     android:layout_marginStart="12dp"
                     android:layout_marginEnd="40dp"
+                    android:tag="OK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -521,6 +546,7 @@
                     android:button="@null"
                     android:layout_gravity="center"
                     android:layout_marginEnd="47dp"
+                    android:tag="NOOK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -529,6 +555,7 @@
                     android:layout_height="20dp"
                     android:button="@null"
                     android:layout_gravity="center"
+                    android:tag="NA"
                     android:background="@drawable/square_radio_button"/>
             </RadioGroup>
         </TableRow>
@@ -558,6 +585,7 @@
                     android:layout_gravity="center"
                     android:layout_marginStart="12dp"
                     android:layout_marginEnd="40dp"
+                    android:tag="OK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -567,6 +595,7 @@
                     android:button="@null"
                     android:layout_gravity="center"
                     android:layout_marginEnd="47dp"
+                    android:tag="NOOK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -575,6 +604,7 @@
                     android:layout_height="20dp"
                     android:button="@null"
                     android:layout_gravity="center"
+                    android:tag="NA"
                     android:background="@drawable/square_radio_button"/>
             </RadioGroup>
         </TableRow>
@@ -604,6 +634,7 @@
                     android:layout_gravity="center"
                     android:layout_marginStart="12dp"
                     android:layout_marginEnd="40dp"
+                    android:tag="OK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -613,6 +644,7 @@
                     android:button="@null"
                     android:layout_gravity="center"
                     android:layout_marginEnd="47dp"
+                    android:tag="NOOK"
                     android:background="@drawable/square_radio_button"/>
 
                 <RadioButton
@@ -621,6 +653,7 @@
                     android:layout_height="20dp"
                     android:button="@null"
                     android:layout_gravity="center"
+                    android:tag="NA"
                     android:background="@drawable/square_radio_button"/>
             </RadioGroup>
         </TableRow>
