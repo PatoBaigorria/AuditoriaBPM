@@ -7,6 +7,7 @@ import com.google.gson.GsonBuilder;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import baigorriap.auditoriabpm.model.Actividad;
 import baigorriap.auditoriabpm.model.AltaAuditoriaRequest;
@@ -14,6 +15,7 @@ import baigorriap.auditoriabpm.model.Auditoria;
 import baigorriap.auditoriabpm.model.AuditoriaItemBPM;
 import baigorriap.auditoriabpm.model.Linea;
 import baigorriap.auditoriabpm.model.Operario;
+import baigorriap.auditoriabpm.model.ReporteAuditorias;
 import baigorriap.auditoriabpm.model.Supervisor;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -73,7 +75,8 @@ public class ApiClient {
         @POST("Auditorias/alta-auditoria-completa")
         Call<ResponseBody> darDeAltaAuditoria(@Header("Authorization") String token, @Body AltaAuditoriaRequest request);
 
-
+        @GET("Auditorias/cantidad-auditorias-mes-a-mes")
+        Call<Map<String, ReporteAuditorias>> obtenerAuditoriasMesAMes(@Header("Authorization") String token, @Query("anioInicio") int anioInicio, @Query("anioFin") int anioFin);
     }
 
     public static void guardarToken(String token, Context context) {
