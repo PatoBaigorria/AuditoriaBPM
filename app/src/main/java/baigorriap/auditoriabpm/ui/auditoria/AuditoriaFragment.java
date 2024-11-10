@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
+import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -52,7 +53,7 @@ public class AuditoriaFragment extends Fragment {
         auditoriaViewModel = new ViewModelProvider(this).get(AuditoriaViewModel.class);
 
         // Inicializa tableLayout
-        tableLayout = binding.tableItems; // Asegúrate de que este ID corresponde a tu XML
+        tableLayout = binding.tableItems;
 
         // Obtén los datos del Bundle pasado desde HomeFragment
         if (getArguments() != null) {
@@ -60,8 +61,6 @@ public class AuditoriaFragment extends Fragment {
             idOperario = getArguments().getInt("idOperario", -1);
             idActividad = getArguments().getInt("idActividad", -1);
             idLinea = getArguments().getInt("idLinea", -1);
-
-            // Obtener el nombre del operario y establecerlo en el TextView
             String nombreOperario = getArguments().getString("nombreOperario");
             binding.tvCampoNomb.setText(nombreOperario != null ? nombreOperario : "Nombre no disponible");
         }
@@ -74,34 +73,26 @@ public class AuditoriaFragment extends Fragment {
         binding.tvCampoFecha.setText(formattedDate);
 
         // Lógica para iterar sobre los RadioGroups en el TableLayout
-        for (int i = 1; i < tableLayout.getChildCount(); i++) {  // Comienza desde 1 para evitar el encabezado
+        for (int i = 1; i < tableLayout.getChildCount(); i++) {
             TableRow row = (TableRow) tableLayout.getChildAt(i);
 
             if (row != null) {
-                Log.d("RadioGroupDebug", "Fila " + i + " encontrada: " + row.toString());
-
-                // Asegúrate de que el RadioGroup tenga un ID como radioGroup1, radioGroup2, etc.
-                String radioGroupId = "radioGroup" + i;  // Usamos la numeración adecuada para las filas de datos
+                String radioGroupId = "radioGroup" + i;
                 int resId = getResources().getIdentifier(radioGroupId, "id", requireContext().getPackageName());
                 RadioGroup radioGroup = row.findViewById(resId);
 
                 if (radioGroup != null) {
-                    Log.d("RadioGroupDebug", "RadioGroup encontrado: " + radioGroupId);
-
                     // Configurar el listener para cada RadioGroup
                     radioGroup.setOnCheckedChangeListener((group, checkedId) -> {
                         if (checkedId != -1) {
                             RadioButton selectedRadioButton = row.findViewById(checkedId);
                             String tag = selectedRadioButton.getTag().toString();
-                            Log.d("RadioGroupDebug", "RadioButton seleccionado: " + tag);  // Verificación del log
 
                             // Obtener el id del item de la fila
                             int idItem = obtenerIdDelItem(row);
                             if (idItem != -1) {
-                                // Llama a tu método en el ViewModel para manejar la selección
                                 AuditoriaItemBPM.EstadoEnum estado = AuditoriaItemBPM.EstadoEnum.valueOf(tag);
-                                Log.d("RadioGroupDebug", "Estado seleccionado: " + estado);  // Verificación del log
-                                auditoriaViewModel.seleccionarEstado(idItem, estado);  // Llamada al ViewModel
+                                auditoriaViewModel.seleccionarEstado(idItem, estado);
                             }
                         }
                     });
@@ -110,9 +101,6 @@ public class AuditoriaFragment extends Fragment {
                 }
             }
         }
-
-
-
         // Observadores para los LiveData del ViewModel
         setupObservers();
 
@@ -131,8 +119,6 @@ public class AuditoriaFragment extends Fragment {
                     .setNegativeButton("No", null)
                     .show();
         });
-
-
         return root;
     }
 
@@ -158,30 +144,53 @@ public class AuditoriaFragment extends Fragment {
     }
 
     private void guardarAuditoria() {
-        Auditoria auditoria = new Auditoria();
-        auditoria.setIdSupervisor(idSupervisor);
-        auditoria.setIdOperario(idOperario);
-        auditoria.setIdActividad(idActividad);
-        auditoria.setIdLinea(idLinea);
-        auditoria.setFecha(new Date());
-        auditoria.setComentario("Comentario de prueba");
+        boolean todosSeleccionados = true;
 
-        // Obtén la lista de ítems seleccionados
-        List<AuditoriaItemBPM> itemsSeleccionados = auditoriaViewModel.getMListaItemsSeleccionados().getValue();
-        if (itemsSeleccionados == null) {
-            itemsSeleccionados = new ArrayList<>();
+        for (int i = 1; i < tableLayout.getChildCount(); i++) {
+            TableRow row = (TableRow) tableLayout.getChildAt(i);
+
+            RadioGroup radioGroup = row.findViewById(getResources().getIdentifier("radioGroup" + i, "id", requireContext().getPackageName()));
+            // Verificar si el RadioGroup tiene algún elemento seleccionado
+            if (radioGroup.getCheckedRadioButtonId() == -1) {
+                todosSeleccionados = false;
+                break;
+            }
         }
 
-        // Convertir itemsSeleccionados a una lista de ItemAuditoriaRequest
-        List<ItemAuditoriaRequest> itemsRequest = new ArrayList<>();
-        for (AuditoriaItemBPM item : itemsSeleccionados) {
-            ItemAuditoriaRequest requestItem = new ItemAuditoriaRequest();
-            requestItem.setIdItemBPM(item.getIdItemBPM());
-            requestItem.setEstado(item.getEstado().name()); // Asegúrate de que el estado esté en el formato correcto
-            requestItem.setComentario(item.getComentario());
-            itemsRequest.add(requestItem);
+        if (!todosSeleccionados) {
+            // Mostrar un mensaje si algún ítem no tiene selección
+            Toast.makeText(getContext(), "Debe seleccionar un estado para cada ítem", Toast.LENGTH_SHORT).show();
+        } else {
+            // Si todos los ítems están seleccionados, procede a guardar
+            Auditoria auditoria = new Auditoria();
+            auditoria.setIdSupervisor(idSupervisor);
+            auditoria.setIdOperario(idOperario);
+            auditoria.setIdActividad(idActividad);
+            auditoria.setIdLinea(idLinea);
+            auditoria.setFecha(new Date());
+            auditoria.setComentario("Comentario de prueba");
+
+            List<AuditoriaItemBPM> itemsSeleccionados = auditoriaViewModel.getMListaItemsSeleccionados().getValue();
+            if (itemsSeleccionados == null) {
+                itemsSeleccionados = new ArrayList<>();
+            }
+
+            List<ItemAuditoriaRequest> itemsRequest = new ArrayList<>();
+            for (AuditoriaItemBPM item : itemsSeleccionados) {
+                ItemAuditoriaRequest requestItem = new ItemAuditoriaRequest();
+                requestItem.setIdItemBPM(item.getIdItemBPM());
+                requestItem.setEstado(item.getEstado().name());
+                requestItem.setComentario(item.getComentario());
+                itemsRequest.add(requestItem);
+            }
+            auditoriaViewModel.guardarAuditoria(idOperario, idSupervisor, idActividad, idLinea, auditoria.getComentario(), itemsRequest);
+            Toast.makeText(getContext(), "Auditoría guardada con éxito", Toast.LENGTH_SHORT).show();
+
+            requireView().postDelayed(() -> {
+                NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
+                navController.navigate(R.id.action_auditoriaFragment_to_homeFragment);
+            }, 2000);  // 2000 ms = 2 segundos
         }
-        auditoriaViewModel.guardarAuditoria(idOperario, idSupervisor, idActividad, idLinea, auditoria.getComentario(), itemsRequest);
     }
 
     private int obtenerIdDelItem(TableRow row) {
@@ -192,7 +201,7 @@ public class AuditoriaFragment extends Fragment {
                 Log.e("TableRowError", "El tag no es un número válido: " + row.getTag());
             }
         }
-        return -1;  // Valor de error si no hay un tag válido
+        return -1;
     }
 
     @Override
