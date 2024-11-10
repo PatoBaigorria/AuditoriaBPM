@@ -130,20 +130,22 @@ public class AuditoriaFragment extends Fragment {
         });
 
         auditoriaViewModel.getMAuditoriaGuardada().observe(getViewLifecycleOwner(), isGuardada -> {
-            String mensaje = isGuardada ? "Auditoría guardada con éxito" : "Error al guardar la auditoría";
-            Toast.makeText(getContext(), mensaje, Toast.LENGTH_SHORT).show();
+            if (isGuardada != null && isGuardada) {  // Solo muestra el Toast si es verdadero
+                Toast.makeText(getContext(), "Auditoría guardada con éxito", Toast.LENGTH_SHORT).show();
+                auditoriaViewModel.setMAuditoriaGuardada(false);  // Reseteamos el valor a false después de mostrar el Toast
+            }
         });
+
 
         auditoriaViewModel.getMListaItemsSeleccionados().observe(getViewLifecycleOwner(), itemsSeleccionados -> {
             if (itemsSeleccionados != null && !itemsSeleccionados.isEmpty()) {
                 Log.d("AuditoriaFragment", "Ítems seleccionados: " + itemsSeleccionados.size());
-            } else {
-                Toast.makeText(getContext(), "No hay ítems seleccionados", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     private void guardarAuditoria() {
+        Log.d("GuardarAuditoria", "Se está ejecutando el método guardarAuditoria"); // Log agregado
         boolean todosSeleccionados = true;
 
         for (int i = 1; i < tableLayout.getChildCount(); i++) {
@@ -184,8 +186,7 @@ public class AuditoriaFragment extends Fragment {
                 itemsRequest.add(requestItem);
             }
             auditoriaViewModel.guardarAuditoria(idOperario, idSupervisor, idActividad, idLinea, auditoria.getComentario(), itemsRequest);
-            Toast.makeText(getContext(), "Auditoría guardada con éxito", Toast.LENGTH_SHORT).show();
-
+            
             requireView().postDelayed(() -> {
                 NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
                 navController.navigate(R.id.action_auditoriaFragment_to_homeFragment);

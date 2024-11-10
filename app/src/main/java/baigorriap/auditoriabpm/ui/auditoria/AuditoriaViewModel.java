@@ -58,6 +58,12 @@ public class AuditoriaViewModel extends AndroidViewModel {
         }
         return mAuditoriaGuardada;
     }
+    public void setMAuditoriaGuardada(Boolean value) {
+        if (mAuditoriaGuardada == null) {
+            mAuditoriaGuardada = new MutableLiveData<>();
+        }
+        mAuditoriaGuardada.setValue(value);  // O usa postValue si lo necesitas para operaciones en segundo plano
+    }
 
     // Métodos para seleccionar y actualizar ítems
     public void seleccionarEstado(int idItem, EstadoEnum estado) {
