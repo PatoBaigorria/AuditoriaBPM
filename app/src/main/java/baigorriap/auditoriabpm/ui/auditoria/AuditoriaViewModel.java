@@ -28,6 +28,7 @@ public class AuditoriaViewModel extends AndroidViewModel {
     private MutableLiveData<String> mErrorMessage;
     private MutableLiveData<List<AuditoriaItemBPM>> mListaItemsSeleccionados;
     private MutableLiveData<Boolean> mAuditoriaGuardada;
+    private MutableLiveData<String> mComentario;
     private final Application application;
     private static final String TAG = "AuditoriaViewModel"; // Definimos un TAG para los logs
 
@@ -62,8 +63,22 @@ public class AuditoriaViewModel extends AndroidViewModel {
         if (mAuditoriaGuardada == null) {
             mAuditoriaGuardada = new MutableLiveData<>();
         }
-        mAuditoriaGuardada.setValue(value);  // O usa postValue si lo necesitas para operaciones en segundo plano
+        mAuditoriaGuardada.setValue(value);
     }
+
+    public LiveData<String> getComentario() {
+        if (mComentario == null) {
+            mComentario = new MutableLiveData<>();
+        }
+        return mComentario;
+    }
+    public void setComentario(String comentario) {
+        if (mComentario == null) {
+            mComentario = new MutableLiveData<>();
+        }
+        mComentario.setValue(comentario);
+    }
+
 
     // Métodos para seleccionar y actualizar ítems
     public void seleccionarEstado(int idItem, EstadoEnum estado) {

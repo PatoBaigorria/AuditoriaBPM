@@ -9,7 +9,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
-import android.os.Handler;
+import android.widget.EditText;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -119,6 +119,26 @@ public class AuditoriaFragment extends Fragment {
                     .setNegativeButton("No", null)
                     .show();
         });
+
+        binding.imgBtnComentarios.setOnClickListener(v -> {
+            AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+            builder.setTitle("Escribe un comentario");
+
+            // EditText para el comentario
+            final EditText input = new EditText(requireContext());
+            input.setHint("Ingrese comentario aquí");
+            builder.setView(input);
+
+            builder.setPositiveButton("Aceptar", (dialog, which) -> {
+                String comentario = input.getText().toString();
+                auditoriaViewModel.setComentario(comentario);
+                Toast.makeText(getContext(), "Comentario guardado temporalmente", Toast.LENGTH_SHORT).show();
+            });
+            builder.setNegativeButton("Cancelar", (dialog, which) -> dialog.cancel());
+
+            builder.show();
+        });
+
         return root;
     }
 
@@ -145,7 +165,7 @@ public class AuditoriaFragment extends Fragment {
     }
 
     private void guardarAuditoria() {
-        Log.d("GuardarAuditoria", "Se está ejecutando el método guardarAuditoria"); // Log agregado
+
         boolean todosSeleccionados = true;
 
         for (int i = 1; i < tableLayout.getChildCount(); i++) {
@@ -170,7 +190,10 @@ public class AuditoriaFragment extends Fragment {
             auditoria.setIdActividad(idActividad);
             auditoria.setIdLinea(idLinea);
             auditoria.setFecha(new Date());
-            auditoria.setComentario("Comentario de prueba");
+            // Obtener el comentario temporal desde el ViewModel
+            String comentario = auditoriaViewModel.getComentario().getValue();
+            auditoria.setComentario(comentario != null ? comentario : "");
+
 
             List<AuditoriaItemBPM> itemsSeleccionados = auditoriaViewModel.getMListaItemsSeleccionados().getValue();
             if (itemsSeleccionados == null) {
@@ -186,11 +209,11 @@ public class AuditoriaFragment extends Fragment {
                 itemsRequest.add(requestItem);
             }
             auditoriaViewModel.guardarAuditoria(idOperario, idSupervisor, idActividad, idLinea, auditoria.getComentario(), itemsRequest);
-            
+
             requireView().postDelayed(() -> {
                 NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
                 navController.navigate(R.id.action_auditoriaFragment_to_homeFragment);
-            }, 2000);  // 2000 ms = 2 segundos
+            }, 2000);  // 2 segundos
         }
     }
 
