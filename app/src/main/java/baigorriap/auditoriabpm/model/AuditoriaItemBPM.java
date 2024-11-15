@@ -7,17 +7,15 @@ public class AuditoriaItemBPM implements Serializable {
     private int idAuditoria;
     private int idItemBPM;
     private EstadoEnum estado;
-    private String comentario;
 
     public AuditoriaItemBPM() {
     }
 
-    public AuditoriaItemBPM(int idAuditoriaItemBPM, int idAuditoria, int idItemBPM, EstadoEnum estado, String comentario) {
+    public AuditoriaItemBPM(int idAuditoriaItemBPM, int idAuditoria, int idItemBPM, EstadoEnum estado) {
         this.idAuditoriaItemBPM = idAuditoriaItemBPM;
         this.idAuditoria = idAuditoria;
         this.idItemBPM = idItemBPM;
         this.estado = estado;
-        this.comentario = comentario;
     }
 
     public int getIdAuditoriaItemBPM() {
@@ -51,14 +49,6 @@ public class AuditoriaItemBPM implements Serializable {
     public void setEstado(EstadoEnum estado) {
         this.estado = estado;
     }
-
-    public String getComentario() {
-        return comentario;
-    }
-
-    public void setComentario(String comentario) {
-        this.comentario = comentario;
-    }
     @Override
     public String toString() {
         return "AuditoriaItemBPM{" +
@@ -66,7 +56,6 @@ public class AuditoriaItemBPM implements Serializable {
                 ", idAuditoria=" + idAuditoria +
                 ", idItemBPM=" + idItemBPM +
                 ", estado=" + estado + // Esto asume que 'estado' tiene un método toString()
-                ", comentario='" + comentario + '\'' +
                 '}';
     }
     public enum EstadoEnum {
