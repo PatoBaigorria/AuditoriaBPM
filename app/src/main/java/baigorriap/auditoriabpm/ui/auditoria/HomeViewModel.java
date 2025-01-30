@@ -110,7 +110,6 @@ public class HomeViewModel extends AndroidViewModel {
 
     // Método en el ViewModel para cargar el supervisor
     public void cargarSupervisorPorId(int idSupervisor) {
-        // Supongamos que obtienes el supervisor de una API o base de datos
         // Aquí, simplemente se asigna el ID para demostrar
         this.mIdSupervisor.setValue(idSupervisor);
     }

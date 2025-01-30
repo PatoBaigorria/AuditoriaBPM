@@ -18,6 +18,7 @@ import java.util.List;
 
 import baigorriap.auditoriabpm.model.AuditoriaItemBPM;
 import baigorriap.auditoriabpm.model.ItemAuditoriaRequest;
+import baigorriap.auditoriabpm.model.Operario;
 import baigorriap.auditoriabpm.request.ApiClient;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -29,6 +30,7 @@ public class AuditoriaViewModel extends AndroidViewModel {
     private MutableLiveData<List<AuditoriaItemBPM>> mListaItemsSeleccionados;
     private MutableLiveData<Boolean> mAuditoriaGuardada;
     private MutableLiveData<String> mComentario;
+    private MutableLiveData<Operario> operario;
     private final Application application;
     private static final String TAG = "AuditoriaViewModel"; // Definimos un TAG para los logs
 
@@ -38,6 +40,7 @@ public class AuditoriaViewModel extends AndroidViewModel {
         this.application = application;
         mErrorMessage = new MutableLiveData<>();
         mListaItemsSeleccionados = new MutableLiveData<>(new ArrayList<>());
+        operario = new MutableLiveData<>();
     }
 
     // Métodos de LiveData
@@ -79,6 +82,9 @@ public class AuditoriaViewModel extends AndroidViewModel {
         mComentario.setValue(comentario);
     }
 
+    public LiveData<Operario> getOperario() {
+        return operario;
+    }
 
     // Métodos para seleccionar y actualizar ítems
     public void seleccionarEstado(int idItem, EstadoEnum estado) {
@@ -131,6 +137,26 @@ public class AuditoriaViewModel extends AndroidViewModel {
                 manejarError("Error en la conexión: " + t.getMessage());
             }
         });
+    }
+
+    public void cargarOperario(int legajo) {
+        String token = ApiClient.leerToken(getApplication());
+        if (token == null) return;
+
+        ApiClient.getEndPoints().obtenerOperario("Bearer " + token, legajo)
+                .enqueue(new Callback<Operario>() {
+                    @Override
+                    public void onResponse(Call<Operario> call, Response<Operario> response) {
+                        if (response.isSuccessful() && response.body() != null) {
+                            operario.setValue(response.body());
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<Operario> call, Throwable t) {
+                        // Manejar el error si es necesario
+                    }
+                });
     }
 
     // Manejo de errores

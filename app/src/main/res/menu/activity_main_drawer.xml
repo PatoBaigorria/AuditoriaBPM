@@ -11,7 +11,18 @@
         <item
             android:id="@+id/nav_gallery"
             android:icon="@drawable/ic_reportes"
-            android:title="@string/menu_gallery" />
+            android:title="Reportes">
+            <menu>
+                <item
+                    android:id="@+id/nav_operarios_sin_auditoria"
+                    android:icon="@drawable/ic_menu_slideshow"
+                    android:title="Operarios sin Auditoría" />
+                <item
+                    android:id="@+id/nav_estadisticas"
+                    android:icon="@drawable/ic_menu_gallery"
+                    android:title="Cantidad de Auditorías Realizadas" />
+            </menu>
+        </item>
         <item
             android:id="@+id/nav_slideshow"
             android:icon="@drawable/ic_exit"

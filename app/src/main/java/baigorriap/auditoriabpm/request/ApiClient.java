@@ -13,8 +13,11 @@ import baigorriap.auditoriabpm.model.Actividad;
 import baigorriap.auditoriabpm.model.AltaAuditoriaRequest;
 import baigorriap.auditoriabpm.model.Auditoria;
 import baigorriap.auditoriabpm.model.AuditoriaItemBPM;
+import baigorriap.auditoriabpm.model.EstadisticasAuditoria;
+import baigorriap.auditoriabpm.model.ItemBPM;
 import baigorriap.auditoriabpm.model.Linea;
 import baigorriap.auditoriabpm.model.Operario;
+import baigorriap.auditoriabpm.model.OperarioSinAuditoria;
 import baigorriap.auditoriabpm.model.ReporteAuditorias;
 import baigorriap.auditoriabpm.model.Supervisor;
 import okhttp3.ResponseBody;
@@ -30,9 +33,12 @@ import retrofit2.http.POST;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
+/**
+ * Created by etsda on 24/01/2018.
+ */
 
 public class ApiClient {
-    public static final String URL = "http://192.168.0.21:5000/";
+    public static final String URL = "http://192.168.100.3:5000/";
     private static MisEndPoints mep;
 
     public static MisEndPoints getEndPoints(){
@@ -62,7 +68,6 @@ public class ApiClient {
         @GET("Operarios/byLegajo")
         Call<Operario> obtenerOperario(@Header("Authorization") String token, @Query("legajo") int legajo);
 
-
         @GET("Actividades/todas")
         Call<List<Actividad>> obtenerTodasLasActividades(@Header("Authorization") String token);
 
@@ -77,6 +82,16 @@ public class ApiClient {
 
         @GET("Auditorias/cantidad-auditorias-mes-a-mes")
         Call<Map<String, ReporteAuditorias>> obtenerAuditoriasMesAMes(@Header("Authorization") String token, @Query("anioInicio") int anioInicio, @Query("anioFin") int anioFin);
+
+        @GET("Auditorias/auditorias-operario")
+        Call<List<OperarioSinAuditoria>> obtenerOperariosSinAuditorias(@Header("Authorization") String token);
+
+        @GET("Auditorias/cantidad-auditorias-mes-a-mes")
+        Call<Map<String, EstadisticasAuditoria>> obtenerEstadisticasAuditoria(
+                @Header("Authorization") String token,
+                @Query("anioInicio") int anioInicio,
+                @Query("anioFin") int anioFin
+        );
     }
 
     public static void guardarToken(String token, Context context) {
@@ -88,7 +103,8 @@ public class ApiClient {
 
     public static String leerToken(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE);
-        return sharedPreferences.getString("token",null);
+        String token = sharedPreferences.getString("token", null);
+        return token != null ? "Bearer " + token : null;
     }
 
     public static void eliminarToken(Context context) {

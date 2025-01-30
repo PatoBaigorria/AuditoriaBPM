@@ -32,7 +32,7 @@ public class LoginActivityViewModel extends AndroidViewModel {
             public void onResponse(Call<String> call, Response<String> response) {
                 if (response.isSuccessful()) {
                     String token = response.body();
-                    guardarToken("Bearer " + token);
+                    guardarToken(token);
                     Log.d("salida", "Inicio de sesión exitoso");
                     iniciarMainActivity(callback);
                 } else {
