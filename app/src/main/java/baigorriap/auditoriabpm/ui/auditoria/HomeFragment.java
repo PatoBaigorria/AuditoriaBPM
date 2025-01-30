@@ -27,6 +27,9 @@ import baigorriap.auditoriabpm.databinding.FragmentHomeBinding;
 import baigorriap.auditoriabpm.model.Actividad;
 import baigorriap.auditoriabpm.model.Linea;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class HomeFragment extends Fragment {
 
     private FragmentHomeBinding binding;
@@ -154,8 +157,6 @@ public class HomeFragment extends Fragment {
             }
         });
 
-
-
         // Observa los valores del ViewModel y guárdalos en las variables cuando cambien
         vm.getMIdSupervisor().observe(getViewLifecycleOwner(), id -> {
             if (id != null) {
@@ -215,7 +216,6 @@ public class HomeFragment extends Fragment {
                 return; // Evita navegar si no hay línea seleccionada
             }
 
-
             // Crea un Bundle y añade el nombre del operario y los IDs
             Bundle bundle = new Bundle();
             bundle.putInt("idOperario", idOperario);
@@ -223,7 +223,6 @@ public class HomeFragment extends Fragment {
             bundle.putInt("idSupervisor", idSupervisor);
             bundle.putInt("idActividad", idActividad);
             bundle.putInt("idLinea", idLinea);
-
 
             // Navega a AuditoriaFragment pasando el bundle
             NavController navController = Navigation.findNavController(v);

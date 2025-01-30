@@ -19,33 +19,59 @@
         android:id="@+id/nav_gallery"
         android:name="baigorriap.auditoriabpm.ui.reporte.ReporteFragment"
         android:label="Reportes"
-        tools:layout="@layout/fragment_reporte" />
+        tools:layout="@layout/fragment_reporte">
+        <action
+            android:id="@+id/action_nav_gallery_to_nav_home"
+            app:destination="@id/nav_home"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="true" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_slideshow"
         android:name="baigorriap.auditoriabpm.ui.cerrarSesion.SlideshowFragment"
         android:label="@string/menu_slideshow"
-        tools:layout="@layout/fragment_slideshow" />
+        tools:layout="@layout/fragment_slideshow">
+        <action
+            android:id="@+id/action_nav_slideshow_to_nav_home"
+            app:destination="@id/nav_home"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="true" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_auditoria"
         android:name="baigorriap.auditoriabpm.ui.auditoria.AuditoriaFragment"
         android:label="Auditoría BPM"
-        tools:layout="@layout/fragment_auditoria" >
+        tools:layout="@layout/fragment_auditoria">
         <action
             android:id="@+id/action_auditoriaFragment_to_homeFragment"
-            app:destination="@id/nav_home" />
+            app:destination="@id/nav_home"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="true" />
     </fragment>
 
     <fragment
         android:id="@+id/nav_operarios_sin_auditoria"
         android:name="baigorriap.auditoriabpm.ui.reporte.OperariosSinAuditoriaFragment"
         android:label="Operarios sin Auditoría"
-        tools:layout="@layout/fragment_operarios_sin_auditoria" />
+        tools:layout="@layout/fragment_operarios_sin_auditoria">
+        <action
+            android:id="@+id/action_nav_operarios_sin_auditoria_to_nav_home"
+            app:destination="@id/nav_home"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="true" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_estadisticas"
         android:name="baigorriap.auditoriabpm.ui.estadisticas.EstadisticasFragment"
         android:label="Estadísticas"
-        tools:layout="@layout/activity_estadisticas_auditoria" />
+        tools:layout="@layout/activity_estadisticas_auditoria">
+        <action
+            android:id="@+id/action_nav_estadisticas_to_nav_home"
+            app:destination="@id/nav_home"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="true" />
+    </fragment>
 </navigation>

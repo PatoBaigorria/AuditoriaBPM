@@ -14,6 +14,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.NavOptions;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -51,6 +53,22 @@ public class OperariosSinAuditoriaFragment extends Fragment implements TextWatch
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         root = inflater.inflate(R.layout.fragment_operarios_sin_auditoria, container, false);
+        
+        // Configurar la navegación al presionar el botón de retroceso
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new androidx.activity.OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                // Navegar al HomeFragment
+                Navigation.findNavController(root).navigate(
+                    R.id.action_nav_operarios_sin_auditoria_to_nav_home,
+                    null,
+                    new NavOptions.Builder()
+                        .setPopUpTo(R.id.nav_home, true)
+                        .build()
+                );
+            }
+        });
+
         return root;
     }
 

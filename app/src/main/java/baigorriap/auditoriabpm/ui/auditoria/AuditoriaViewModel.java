@@ -16,8 +16,10 @@ import com.google.gson.Gson;
 import java.util.ArrayList;
 import java.util.List;
 
+import baigorriap.auditoriabpm.model.Actividad;
 import baigorriap.auditoriabpm.model.AuditoriaItemBPM;
 import baigorriap.auditoriabpm.model.ItemAuditoriaRequest;
+import baigorriap.auditoriabpm.model.Linea;
 import baigorriap.auditoriabpm.model.Operario;
 import baigorriap.auditoriabpm.request.ApiClient;
 import okhttp3.ResponseBody;
@@ -26,64 +28,49 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class AuditoriaViewModel extends AndroidViewModel {
-    private MutableLiveData<String> mErrorMessage;
-    private MutableLiveData<List<AuditoriaItemBPM>> mListaItemsSeleccionados;
-    private MutableLiveData<Boolean> mAuditoriaGuardada;
-    private MutableLiveData<String> mComentario;
-    private MutableLiveData<Operario> operario;
+    private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> mAuditoriaGuardada = new MutableLiveData<>();
+    private final MutableLiveData<List<AuditoriaItemBPM>> mListaItemsSeleccionados = new MutableLiveData<>(new ArrayList<>());
+    private final MutableLiveData<String> comentario = new MutableLiveData<>("");
+    private final MutableLiveData<Operario> operario = new MutableLiveData<>();
     private final Application application;
-    private static final String TAG = "AuditoriaViewModel"; // Definimos un TAG para los logs
-
+    private static final String TAG = "AuditoriaViewModel";
 
     public AuditoriaViewModel(@NonNull Application application) {
         super(application);
         this.application = application;
-        mErrorMessage = new MutableLiveData<>();
-        mListaItemsSeleccionados = new MutableLiveData<>(new ArrayList<>());
-        operario = new MutableLiveData<>();
     }
-
-    // Métodos de LiveData
 
     public LiveData<String> getErrorMessage() {
-        return mErrorMessage;
-    }
-
-    public LiveData<List<AuditoriaItemBPM>> getMListaItemsSeleccionados() {
-        if (mListaItemsSeleccionados == null) {
-            mListaItemsSeleccionados = new MutableLiveData<>();
-        }
-        return mListaItemsSeleccionados;
+        return errorMessage;
     }
 
     public LiveData<Boolean> getMAuditoriaGuardada() {
-        if (mAuditoriaGuardada == null) {
-            mAuditoriaGuardada = new MutableLiveData<>();
-        }
         return mAuditoriaGuardada;
     }
+
     public void setMAuditoriaGuardada(Boolean value) {
-        if (mAuditoriaGuardada == null) {
-            mAuditoriaGuardada = new MutableLiveData<>();
-        }
         mAuditoriaGuardada.setValue(value);
     }
 
-    public LiveData<String> getComentario() {
-        if (mComentario == null) {
-            mComentario = new MutableLiveData<>();
-        }
-        return mComentario;
+    public LiveData<List<AuditoriaItemBPM>> getMListaItemsSeleccionados() {
+        return mListaItemsSeleccionados;
     }
-    public void setComentario(String comentario) {
-        if (mComentario == null) {
-            mComentario = new MutableLiveData<>();
-        }
-        mComentario.setValue(comentario);
+
+    public LiveData<String> getComentario() {
+        return comentario;
+    }
+
+    public void setComentario(String value) {
+        comentario.setValue(value);
     }
 
     public LiveData<Operario> getOperario() {
         return operario;
+    }
+
+    public void limpiarItemsSeleccionados() {
+        mListaItemsSeleccionados.setValue(new ArrayList<>());
     }
 
     // Métodos para seleccionar y actualizar ítems
@@ -114,14 +101,11 @@ public class AuditoriaViewModel extends AndroidViewModel {
 
     // Método para guardar auditoría
     public void guardarAuditoria(int idOperario, int idSupervisor, int idActividad, int idLinea, String comentario, List<ItemAuditoriaRequest> items) {
-
         String token = ApiClient.leerToken(application);
         AltaAuditoriaRequest request = new AltaAuditoriaRequest(idOperario, idSupervisor, idActividad, idLinea, comentario, items);
 
-
         Call<ResponseBody> callAuditoria = ApiClient.getEndPoints().darDeAltaAuditoria(token, request);
         callAuditoria.enqueue(new Callback<ResponseBody>() {
-
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 Log.d("API Response", "Código: " + response.code() + ", Cuerpo: " + response.body());
@@ -141,20 +125,26 @@ public class AuditoriaViewModel extends AndroidViewModel {
 
     public void cargarOperario(int legajo) {
         String token = ApiClient.leerToken(getApplication());
-        if (token == null) return;
+        if (token == null) {
+            manejarError("No se encontró el token de autenticación");
+            return;
+        }
 
         ApiClient.getEndPoints().obtenerOperario("Bearer " + token, legajo)
                 .enqueue(new Callback<Operario>() {
                     @Override
                     public void onResponse(Call<Operario> call, Response<Operario> response) {
                         if (response.isSuccessful() && response.body() != null) {
-                            operario.setValue(response.body());
+                            Operario op = response.body();
+                            operario.setValue(op);
+                        } else {
+                            manejarError("Error al cargar el operario: " + response.code());
                         }
                     }
 
                     @Override
                     public void onFailure(Call<Operario> call, Throwable t) {
-                        // Manejar el error si es necesario
+                        manejarError("Error de conexión al cargar el operario: " + t.getMessage());
                     }
                 });
     }
@@ -162,6 +152,6 @@ public class AuditoriaViewModel extends AndroidViewModel {
     // Manejo de errores
     private void manejarError(String mensaje) {
         Log.e("API Error", mensaje);
-        mErrorMessage.postValue(mensaje);
+        errorMessage.postValue(mensaje);
     }
 }

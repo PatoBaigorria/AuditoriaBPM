@@ -4,8 +4,8 @@
         <item name="windowNoTitle">true</item>
 
         <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_500</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorPrimary">@color/toolbar_blue</item>
+        <item name="colorPrimaryVariant">@color/toolbar_blue_dark</item>
         <item name="colorOnPrimary">@color/white</item>
         <!-- Secondary brand color. -->
         <item name="colorSecondary">@color/teal_200</item>
@@ -13,20 +13,13 @@
         <item name="colorOnSecondary">@color/black</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
-        <!-- Aquí no se necesita actionBarStyle ya que estamos usando NoActionBar -->
+        
+        <!-- Toolbar theme -->
+        <item name="actionBarTheme">@style/ThemeOverlay.MaterialComponents.Dark.ActionBar</item>
+        <item name="actionBarPopupTheme">@style/ThemeOverlay.MaterialComponents.Light</item>
     </style>
 
-    <style name="AppActionBar" parent="Widget.AppCompat.ActionBar">
-        <!-- Fondo de la ActionBar -->
-        <item name="android:background">@color/purple_700</item>
-        <!-- Estilo del título de la ActionBar -->
-        <item name="android:titleTextStyle">@style/ActionBarTitleText</item>
-    </style>
+    <style name="Theme.AuditoriaBPM" parent="Base.Theme.AuditoriaBPM" />
 
-    <style name="ActionBarTitleText" parent="TextAppearance.AppCompat.Widget.ActionBar.Title">
-        <item name="android:textColor">@android:color/white</item>
-        <item name="android:textSize">20sp</item>
-    </style>
-
-    <style name="Base.Theme.AuditoriaBPM.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+    <style name="Base.Theme.AuditoriaBPM.PopupOverlay" parent="ThemeOverlay.MaterialComponents.Light" />
 </resources>

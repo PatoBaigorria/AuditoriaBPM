@@ -118,9 +118,9 @@
 
         <!-- Fila 1 -->
         <TableRow
-                android:gravity="center_vertical"
-                android:layout_margin="1dp"
-                android:tag="1">
+            android:gravity="center_vertical"
+            android:layout_margin="1dp"
+            android:tag="1">
 
             <TextView
                 android:padding="8dp"
@@ -170,9 +170,9 @@
 
         <!-- Fila 2 -->
         <TableRow
-                android:gravity="center_vertical"
-                android:layout_margin="1dp"
-                android:tag="2">
+            android:gravity="center_vertical"
+            android:layout_margin="1dp"
+            android:tag="2">
             <TextView
                 android:text="Uniforme No Alterado"
                 android:padding="8dp"
@@ -219,9 +219,9 @@
 
         <!-- Fila 3 -->
         <TableRow
-                android:gravity="center_vertical"
-                android:layout_margin="1dp"
-                android:tag="3">
+            android:gravity="center_vertical"
+            android:layout_margin="1dp"
+            android:tag="3">
             <TextView
                 android:text="Uso de Guantes"
                 android:padding="8dp"
@@ -268,9 +268,9 @@
 
         <!-- Fila 4 -->
         <TableRow
-                android:gravity="center_vertical"
-                android:layout_margin="1dp"
-                android:tag="4">
+            android:gravity="center_vertical"
+            android:layout_margin="1dp"
+            android:tag="4">
             <TextView
                 android:text="Cofia Bien Colocada"
                 android:padding="8dp"
@@ -317,9 +317,9 @@
 
         <!-- Fila 5 -->
         <TableRow
-                android:gravity="center_vertical"
-                android:layout_margin="1dp"
-                android:tag="5">
+            android:gravity="center_vertical"
+            android:layout_margin="1dp"
+            android:tag="5">
             <TextView
                 android:text="Barbijo/Barbero Bien Colocado"
                 android:padding="8dp"
@@ -366,9 +366,9 @@
 
         <!-- Fila 6 -->
         <TableRow
-                android:gravity="center_vertical"
-                android:layout_margin="1dp"
-                android:tag="6">
+            android:gravity="center_vertical"
+            android:layout_margin="1dp"
+            android:tag="6">
             <TextView
                 android:text="Sin Alhajas"
                 android:padding="8dp"
@@ -415,9 +415,9 @@
 
         <!-- Fila 7 -->
         <TableRow
-                android:gravity="center_vertical"
-                android:layout_margin="1dp"
-                android:tag="7">
+            android:gravity="center_vertical"
+            android:layout_margin="1dp"
+            android:tag="7">
             <TextView
                 android:text="Maquillaje/Perfume"
                 android:padding="8dp"
@@ -464,9 +464,9 @@
 
         <!-- Fila 8 -->
         <TableRow
-                android:gravity="center_vertical"
-                android:layout_margin="1dp"
-                android:tag="8">
+            android:gravity="center_vertical"
+            android:layout_margin="1dp"
+            android:tag="8">
             <TextView
                 android:text="Uso Correcto de Lentes"
                 android:padding="8dp"
@@ -513,9 +513,9 @@
 
         <!-- Fila 9 -->
         <TableRow
-                android:gravity="center_vertical"
-                android:layout_margin="1dp"
-                android:tag="9">
+            android:gravity="center_vertical"
+            android:layout_margin="1dp"
+            android:tag="9">
             <TextView
                 android:text="No Consumo de Alimentos"
                 android:padding="8dp"
@@ -562,9 +562,9 @@
 
         <!-- Fila 10 -->
         <TableRow
-                android:gravity="center_vertical"
-                android:layout_margin="1dp"
-                android:tag="10">
+            android:gravity="center_vertical"
+            android:layout_margin="1dp"
+            android:tag="10">
             <TextView
                 android:text="Orden/Limpieza"
                 android:padding="8dp"
@@ -611,9 +611,9 @@
 
         <!-- Fila 11 -->
         <TableRow
-                android:gravity="center_vertical"
-                android:layout_margin="1dp"
-                android:tag="11">
+            android:gravity="center_vertical"
+            android:layout_margin="1dp"
+            android:tag="11">
             <TextView
                 android:text="Productos Químicos"
                 android:padding="8dp"

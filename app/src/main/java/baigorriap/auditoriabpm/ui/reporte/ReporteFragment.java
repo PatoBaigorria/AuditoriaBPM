@@ -5,10 +5,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
+import androidx.navigation.NavOptions;
 
 import baigorriap.auditoriabpm.R;
 import baigorriap.auditoriabpm.databinding.FragmentReporteBinding;
@@ -21,6 +23,19 @@ public class ReporteFragment extends Fragment {
                            ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentReporteBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
+
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                Navigation.findNavController(root).navigate(
+                    R.id.action_nav_gallery_to_nav_home,
+                    null,
+                    new NavOptions.Builder()
+                        .setPopUpTo(R.id.nav_home, true)
+                        .build()
+                );
+            }
+        });
 
         setupClickListeners();
 

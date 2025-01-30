@@ -6,14 +6,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.NavOptions;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import java.util.Calendar;
 import java.util.Map;
 
+import baigorriap.auditoriabpm.R;
 import baigorriap.auditoriabpm.databinding.ActivityEstadisticasAuditoriaBinding;
 import baigorriap.auditoriabpm.model.EstadisticasAuditoria;
 
@@ -25,14 +29,30 @@ public class EstadisticasFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = ActivityEstadisticasAuditoriaBinding.inflate(inflater, container, false);
+        View root = binding.getRoot();
         viewModel = new ViewModelProvider(this).get(EstadisticasViewModel.class);
+
+        // Configurar la navegación al presionar el botón de retroceso
+        requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                // Navegar al HomeFragment
+                Navigation.findNavController(root).navigate(
+                    R.id.action_nav_estadisticas_to_nav_home,
+                    null,
+                    new NavOptions.Builder()
+                        .setPopUpTo(R.id.nav_home, true)
+                        .build()
+                );
+            }
+        });
 
         setupRecyclerView();
         setupListeners();
         setupObservers();
         setDefaultYears();
 
-        return binding.getRoot();
+        return root;
     }
 
     private void setupRecyclerView() {

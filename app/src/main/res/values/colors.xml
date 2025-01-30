@@ -35,5 +35,8 @@
     <color name="disabled_text_color">#9E9E9E</color>
     <color name="disabled_text_color2">#808080</color>
     <color name="celeste">#00BFFF</color> <!-- Define el color celeste -->
-
+    
+    <!-- Color principal para el toolbar -->
+    <color name="toolbar_blue">#1976D2</color>
+    <color name="toolbar_blue_dark">#1565C0</color>
 </resources>

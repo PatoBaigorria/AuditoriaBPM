@@ -4,15 +4,9 @@
         <item name="hintTextColor">@color/hintColorDark</item>
         <item name="android:textColorHint">@color/hintColorDark</item>
     </style>
+
     <style name="TableRowWithDivider">
         <item name="android:divider">?android:attr/listDivider</item>
         <item name="android:showDividers">middle</item>
     </style>
-    <!-- Define un estilo personalizado para el texto de la Toolbar -->
-    <style name="CustomToolbarTitle" parent="TextAppearance.Widget.AppCompat.Toolbar.Title">
-        <item name="android:textColor">@android:color/white</item> <!-- Color del texto -->
-        <item name="android:textSize">20sp</item> <!-- Tamaño del texto -->
-    </style>
-
-
 </resources>

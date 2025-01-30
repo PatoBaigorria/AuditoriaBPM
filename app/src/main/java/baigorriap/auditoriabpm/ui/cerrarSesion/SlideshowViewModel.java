@@ -6,12 +6,15 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.util.Log;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
+import androidx.navigation.NavOptions;
 
 import baigorriap.auditoriabpm.LoginActivity;
 import baigorriap.auditoriabpm.MenuActivity;
+import baigorriap.auditoriabpm.R;
 import baigorriap.auditoriabpm.request.ApiClient;
 
 public class SlideshowViewModel extends AndroidViewModel {
@@ -20,7 +23,7 @@ public class SlideshowViewModel extends AndroidViewModel {
         super(application);
     }
 
-    public static void mostrarDialogo(Context context) {
+    public static void mostrarDialogo(Context context, View root) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle("Confirmar salida");
         builder.setMessage("¿Está seguro que desea salir?");
@@ -49,6 +52,14 @@ public class SlideshowViewModel extends AndroidViewModel {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
+                // Navegar al HomeFragment
+                androidx.navigation.Navigation.findNavController(root).navigate(
+                    R.id.action_nav_slideshow_to_nav_home,
+                    null,
+                    new androidx.navigation.NavOptions.Builder()
+                        .setPopUpTo(R.id.nav_home, true)
+                        .build()
+                );
             }
         });
         builder.show();
