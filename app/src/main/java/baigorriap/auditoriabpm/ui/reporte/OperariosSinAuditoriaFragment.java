@@ -22,9 +22,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -157,6 +159,7 @@ public class OperariosSinAuditoriaFragment extends Fragment implements TextWatch
                 
                 progressBar.setVisibility(View.GONE);
                 if (response.isSuccessful() && response.body() != null) {
+                    Log.d(TAG, "Respuesta de la API: " + new Gson().toJson(response.body())); // <-- Esto imprimirá toda la lista
                     todosLosOperarios = response.body();
                     operariosAdapter.setOperarios(todosLosOperarios);
                     actualizarEstadisticas(todosLosOperarios);
@@ -182,15 +185,15 @@ public class OperariosSinAuditoriaFragment extends Fragment implements TextWatch
 
     private void crearChipsLineas() {
         chipGroupLineas.removeAllViews();
-        
-        Map<Integer, String> lineasUnicas = todosLosOperarios.stream()
-                .collect(Collectors.toMap(
-                    OperarioSinAuditoria::getIdLinea,
-                    OperarioSinAuditoria::getDescripcionLinea,
-                    (desc1, desc2) -> desc1
-                ));
 
+        Map<Integer, String> lineasUnicas = new LinkedHashMap<>();
+        for (OperarioSinAuditoria operario : todosLosOperarios) {
+            lineasUnicas.putIfAbsent(operario.getIdLinea(), operario.getDescripcionLinea());
+        }
+
+        Log.d("DEBUG", "Líneas únicas encontradas:");
         for (Map.Entry<Integer, String> linea : lineasUnicas.entrySet()) {
+            Log.d("DEBUG", "ID Línea: " + linea.getKey() + " - Descripción: " + linea.getValue());
             Chip chip = new Chip(requireContext());
             chip.setText(linea.getValue());
             chip.setCheckable(true);
