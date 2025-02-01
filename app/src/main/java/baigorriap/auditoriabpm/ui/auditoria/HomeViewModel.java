@@ -38,17 +38,24 @@ public class HomeViewModel extends AndroidViewModel {
     public HomeViewModel(@NonNull Application application) {
         super(application);
         this.application = application; // Inicializa la variable
+        
+        // Inicializar todas las MutableLiveData
         mText = new MutableLiveData<>();
-        mText.setValue("Datos del Operario");
+        mLegajo = new MutableLiveData<>();
         mListaActividad = new MutableLiveData<>();
         mListaLinea = new MutableLiveData<>();
-        mErrorMessage = new MutableLiveData<>(); // Inicializa el MutableLiveData para errores
+        mOperario = new MutableLiveData<>();
+        mIdSupervisor = new MutableLiveData<>();
+        mIdOperario = new MutableLiveData<>();
+        mIdActividad = new MutableLiveData<>();
+        mIdLinea = new MutableLiveData<>();
+        mErrorMessage = new MutableLiveData<>();
+        
+        // Establecer valor inicial del texto
+        mText.setValue("Datos del Operario");
     }
 
     public LiveData<String> getErrorMessage() {
-        if (mErrorMessage == null) {
-            mErrorMessage = new MutableLiveData<>();
-        }
         return mErrorMessage;
     }
 
@@ -57,90 +64,70 @@ public class HomeViewModel extends AndroidViewModel {
     }
 
     public LiveData<String> getMLegajo() {
-        if (mLegajo == null) {
-            mLegajo = new MutableLiveData<>();
-        }
         return mLegajo;
     }
 
     public LiveData<List<Actividad>> getMListaActividad() {
-        if (mListaActividad == null) {
-            mListaActividad = new MutableLiveData<>();
-        }
         return mListaActividad;
     }
 
     public LiveData<List<Linea>> getMListaLinea() {
-        if (mListaLinea == null) {
-            mListaLinea = new MutableLiveData<>();
-        }
         return mListaLinea;
     }
 
     public LiveData<Operario> getMOperario() {
-        if (mOperario == null) {
-            mOperario = new MutableLiveData<>();
-        }
         return mOperario;
     }
     public LiveData<Integer> getMIdSupervisor() {
-        if (mIdSupervisor == null) {
-            mIdSupervisor = new MutableLiveData<>();
-        }
         return mIdSupervisor;
     }
     public LiveData<Integer> getMIdOperario() {
-        if (mIdOperario == null) {
-            mIdOperario = new MutableLiveData<>();
-        }
         return mIdOperario;
     }
     public LiveData<Integer> getMIdActividad() {
-        if (mIdActividad == null) {
-            mIdActividad = new MutableLiveData<>();
-        }
         return mIdActividad;
     }
     public LiveData<Integer> getMIdLinea() {
-        if (mIdLinea == null) {
-            mIdLinea = new MutableLiveData<>();
-        }
         return mIdLinea;
     }
 
     // Método en el ViewModel para cargar el supervisor
     public void cargarSupervisorPorId(int idSupervisor) {
-        // Aquí, simplemente se asigna el ID para demostrar
-        this.mIdSupervisor.setValue(idSupervisor);
+        if (mIdSupervisor != null) {
+            mIdSupervisor.setValue(idSupervisor);
+        }
     }
 
 
     public void cargarDatosPorLegajo(int legajo) {
-        if (legajo <= 0) { // Validación simple para legajo
+        if (legajo <= 0) {
             mErrorMessage.setValue("Ingrese un Legajo Válido");
-            return; // Salir del método si el legajo no es válido
+            return;
         }
 
         String token = "Bearer " + ApiClient.leerToken(application);
+        Log.d("HomeViewModel", "Cargando datos para legajo: " + legajo);
 
         // Obtener actividades filtradas por legajo
         Call<List<Actividad>> callActividades = ApiClient.getEndPoints().obtenerActividades(token, legajo);
         callActividades.enqueue(new Callback<List<Actividad>>() {
             @Override
             public void onResponse(Call<List<Actividad>> call, Response<List<Actividad>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    // Establecer la actividad del operario
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    Log.d("HomeViewModel", "Actividades recibidas: " + response.body().size());
                     mListaActividad.setValue(response.body());
-                    // Obtener todas las actividades disponibles
-                    cargarTodasLasActividades();
                 } else {
-                    Log.e("HomeViewModel", "Error al obtener actividades por legajo: " + response.code() + " - " + response.message());
+                    Log.e("HomeViewModel", "Error al obtener actividades o lista vacía: " + 
+                          (response.isSuccessful() ? "Lista vacía" : "Código: " + response.code()));
+                    mListaActividad.setValue(new ArrayList<>());
                 }
             }
 
             @Override
             public void onFailure(Call<List<Actividad>> call, Throwable t) {
-                Toast.makeText(getApplication(), "Error en la obtención de actividades por legajo: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                Log.e("HomeViewModel", "Error al obtener actividades: " + t.getMessage());
+                mListaActividad.setValue(new ArrayList<>());
+                mErrorMessage.setValue("Error al cargar actividades: " + t.getMessage());
             }
         });
 
@@ -149,20 +136,21 @@ public class HomeViewModel extends AndroidViewModel {
         callLineas.enqueue(new Callback<List<Linea>>() {
             @Override
             public void onResponse(Call<List<Linea>> call, Response<List<Linea>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    // Establecer la línea del operario
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    Log.d("HomeViewModel", "Líneas recibidas: " + response.body().size());
                     mListaLinea.setValue(response.body());
-
-                    // Obtener todas las líneas disponibles
-                    cargarTodasLasLineas();
                 } else {
-                    Log.e("HomeViewModel", "Error al obtener líneas por legajo: " + response.code() + " - " + response.message());
+                    Log.e("HomeViewModel", "Error al obtener líneas o lista vacía: " + 
+                          (response.isSuccessful() ? "Lista vacía" : "Código: " + response.code()));
+                    mListaLinea.setValue(new ArrayList<>());
                 }
             }
 
             @Override
             public void onFailure(Call<List<Linea>> call, Throwable t) {
-                Toast.makeText(getApplication(), "Error en la obtención de líneas por legajo: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                Log.e("HomeViewModel", "Error al obtener líneas: " + t.getMessage());
+                mListaLinea.setValue(new ArrayList<>());
+                mErrorMessage.setValue("Error al cargar líneas: " + t.getMessage());
             }
         });
     }
@@ -264,16 +252,14 @@ public class HomeViewModel extends AndroidViewModel {
         });
     }
 
-    public void limpiarSpinnersConHint() {
-        // Crear una lista con solo el hint
-        List<Actividad> hintActividad = new ArrayList<>();
-        hintActividad.add(new Actividad(0, "Actividad")); // Puedes usar un id de 0 para el hint
-
-        List<Linea> hintLinea = new ArrayList<>();
-        hintLinea.add(new Linea(0, "Línea")); // Puedes usar un id de 0 para el hint
-
-        // Actualiza los LiveData para los spinners
-        mListaActividad.setValue(hintActividad);
-        mListaLinea.setValue(hintLinea);
+    public void limpiarTodosDatos() {
+        mOperario.setValue(null);
+        mIdSupervisor.setValue(null);
+        mIdOperario.setValue(null);
+        mIdActividad.setValue(null);
+        mIdLinea.setValue(null);
+        mListaActividad.setValue(new ArrayList<>());
+        mListaLinea.setValue(new ArrayList<>());
+        mLegajo.setValue("");
     }
 }

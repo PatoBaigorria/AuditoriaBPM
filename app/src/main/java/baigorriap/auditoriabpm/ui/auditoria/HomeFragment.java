@@ -19,7 +19,6 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
-import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
 
 import baigorriap.auditoriabpm.R;
@@ -43,33 +42,39 @@ public class HomeFragment extends Fragment {
     private int idActividad;
     private int idLinea;
     private SharedPreferences sharedPreferences;
+    private boolean needsCleanup = false;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
-        vm = new ViewModelProvider(this).get(HomeViewModel.class);
+        
+        // Usar el ViewModel a nivel de actividad
+        vm = new ViewModelProvider(requireActivity()).get(HomeViewModel.class);
 
         sharedPreferences = getActivity().getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
-        idSupervisor = sharedPreferences.getInt("idSupervisor", 0); // Recuperar el idSupervisor
+        idSupervisor = sharedPreferences.getInt("idSupervisor", 0);
 
         // Inicializa los Spinners
         spnActividad = binding.spnActividad;
         spnLinea = binding.spnLinea;
-        vm.limpiarSpinnersConHint();
-
+        
         // Configura el TextView
         final TextView textView = binding.textHome;
         vm.getText().observe(getViewLifecycleOwner(), textView::setText);
         tvNombreOp = binding.tvNombreOp;
 
+        // Inicializar adaptadores con placeholders
+        inicializarAdaptadores();
+
         // Observa el LiveData del nombre del operario
         vm.getMOperario().observe(getViewLifecycleOwner(), operario -> {
             if (operario != null) {
                 tvNombreOp.setText(operario.getNombreCompleto());
-            } else {
-                Toast.makeText(getContext(), "El Legajo NO Existe", Toast.LENGTH_LONG).show();
-                tvNombreOp.setText(""); // Limpiar el nombre si no se encuentra
+                idOperario = operario.getIdOperario();
+            } else if (needsCleanup) {
+                tvNombreOp.setText("");
+                needsCleanup = false;
             }
         });
 
@@ -80,20 +85,18 @@ public class HomeFragment extends Fragment {
         etLegajo.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                // No hacer nada antes del cambio de texto
             }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (s.length() == 0 || s.length() <= 5) {
                     tvNombreOp.setText("");
-                    vm.limpiarSpinnersConHint();
+                    inicializarAdaptadores();
                 }
             }
 
             @Override
             public void afterTextChanged(Editable s) {
-                // No hacer nada después del cambio de texto
             }
         });
 
@@ -104,89 +107,41 @@ public class HomeFragment extends Fragment {
                 try {
                     int legajo = Integer.parseInt(legajoInput);
                     vm.cargarOperarioPorLegajo(legajo);
-                    vm.cargarDatosPorLegajo(legajo); // Cargar datos del operario por legajo
+                    vm.cargarDatosPorLegajo(legajo);
                     vm.cargarSupervisorPorId(idSupervisor);
+                    Toast.makeText(getContext(), "Cargando datos...", Toast.LENGTH_SHORT).show();
                 } catch (NumberFormatException e) {
                     Toast.makeText(getContext(), "Por favor, introduce un número de legajo válido", Toast.LENGTH_SHORT).show();
                 }
             } else {
-                vm.limpiarSpinnersConHint();
+                inicializarAdaptadores();
             }
-            return false;
+            return true;
         });
 
         // Observa la lista de actividades
         vm.getMListaActividad().observe(getViewLifecycleOwner(), actividades -> {
             if (actividades != null && !actividades.isEmpty()) {
-                if (actividadAdapter == null) {
-                    actividadAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, actividades);
-                    actividadAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                    spnActividad.setAdapter(actividadAdapter);
-                } else {
-                    actividadAdapter.clear();
-                    actividadAdapter.addAll(actividades);
-                    actividadAdapter.notifyDataSetChanged();
-                }
-            } else {
-                vm.limpiarSpinnersConHint();
-                if (actividadAdapter != null) {
-                    actividadAdapter.clear();
-                    actividadAdapter.notifyDataSetChanged();
-                }
+                Log.d("HomeFragment", "Recibidas " + actividades.size() + " actividades");
+                actividadAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, actividades);
+                actividadAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                spnActividad.setAdapter(actividadAdapter);
+            } else if (needsCleanup) {
+                Log.d("HomeFragment", "Lista de actividades vacía o nula");
+                inicializarAdaptadores();
             }
         });
 
         // Observa la lista de líneas
         vm.getMListaLinea().observe(getViewLifecycleOwner(), lineas -> {
             if (lineas != null && !lineas.isEmpty()) {
-                if (lineaAdapter == null) {
-                    lineaAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, lineas);
-                    lineaAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                    spnLinea.setAdapter(lineaAdapter);
-                } else {
-                    lineaAdapter.clear();
-                    lineaAdapter.addAll(lineas);
-                    lineaAdapter.notifyDataSetChanged();
-                }
-            } else {
-                vm.limpiarSpinnersConHint();
-                if (lineaAdapter != null) {
-                    lineaAdapter.clear();
-                    lineaAdapter.notifyDataSetChanged();
-                }
-            }
-        });
-
-        // Observa los valores del ViewModel y guárdalos en las variables cuando cambien
-        vm.getMIdSupervisor().observe(getViewLifecycleOwner(), id -> {
-            if (id != null) {
-                idSupervisor = id; // Aquí id es un Integer, no un objeto con método
-                Log.d("HomeFragment", "idSupervisor asignado: " + idSupervisor);
-            } else {
-                Log.d("HomeFragment", "El ID del supervisor es nulo");
-            }
-        });
-
-        vm.getMOperario().observe(getViewLifecycleOwner(), operario -> {
-            if (operario != null) {
-                idOperario = operario.getIdOperario(); // Asegúrate de que tengas un método getId() en tu modelo de Operario
-                tvNombreOp.setText(operario.getNombreCompleto());
-                Log.d("HomeFragment", "idOperario asignado: " + idOperario);
-            } else {
-                Toast.makeText(getContext(), "El Legajo NO Existe", Toast.LENGTH_LONG).show();
-                tvNombreOp.setText(""); // Limpiar el nombre si no se encuentra
-            }
-        });
-
-        vm.getMIdActividad().observe(getViewLifecycleOwner(), id -> {
-            if (id != null) {
-                idActividad = id;
-            }
-        });
-
-        vm.getMIdLinea().observe(getViewLifecycleOwner(), id -> {
-            if (id != null) {
-                idLinea = id;
+                Log.d("HomeFragment", "Recibidas " + lineas.size() + " líneas");
+                lineaAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, lineas);
+                lineaAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                spnLinea.setAdapter(lineaAdapter);
+            } else if (needsCleanup) {
+                Log.d("HomeFragment", "Lista de líneas vacía o nula");
+                inicializarAdaptadores();
             }
         });
 
@@ -195,43 +150,78 @@ public class HomeFragment extends Fragment {
             String nombreOperario = tvNombreOp.getText().toString();
             if (nombreOperario.isEmpty()) {
                 Toast.makeText(getContext(), "El nombre del operario está vacío", Toast.LENGTH_SHORT).show();
-                return; // Evita navegar si no hay nombre
+                return;
             }
+            
             // Toma el valor seleccionado directamente de los spinners
             Actividad selectedActividad = (Actividad) spnActividad.getSelectedItem();
             Linea selectedLinea = (Linea) spnLinea.getSelectedItem();
 
-            // Asegúrate de que el elemento seleccionado no sea nulo
-            if (selectedActividad != null) {
-                idActividad = selectedActividad.getIdActividad();
-            } else {
-                Toast.makeText(getContext(), "Por favor selecciona una actividad", Toast.LENGTH_SHORT).show();
-                return; // Evita navegar si no hay actividad seleccionada
+            if (selectedActividad == null || selectedLinea == null) {
+                Toast.makeText(getContext(), "Debe seleccionar actividad y línea", Toast.LENGTH_SHORT).show();
+                return;
             }
 
-            if (selectedLinea != null) {
-                idLinea = selectedLinea.getIdLinea();
-            } else {
-                Toast.makeText(getContext(), "Por favor selecciona una línea", Toast.LENGTH_SHORT).show();
-                return; // Evita navegar si no hay línea seleccionada
-            }
-
-            // Crea un Bundle y añade el nombre del operario y los IDs
+            // Navegar al siguiente fragmento con los datos
             Bundle bundle = new Bundle();
             bundle.putInt("idOperario", idOperario);
-            bundle.putString("nombreOperario", nombreOperario); // Agrega el nombre
             bundle.putInt("idSupervisor", idSupervisor);
-            bundle.putInt("idActividad", idActividad);
-            bundle.putInt("idLinea", idLinea);
+            bundle.putInt("idActividad", selectedActividad.getIdActividad());
+            bundle.putInt("idLinea", selectedLinea.getIdLinea());
+            bundle.putString("nombreOperario", nombreOperario);
 
-            // Navega a AuditoriaFragment pasando el bundle
-            NavController navController = Navigation.findNavController(v);
-            navController.navigate(R.id.nav_auditoria, bundle, new NavOptions.Builder()
-                    .setPopUpTo(R.id.nav_home, true) // Elimina HomeFragment del backstack
-                    .build());
+            NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
+            navController.navigate(R.id.nav_auditoria, bundle);
+        });
+
+        getParentFragmentManager().setFragmentResultListener("needsReset", this, (requestKey, result) -> {
+            if (result.getBoolean("reset", false)) {
+                limpiarTodo();
+            }
         });
 
         return root;
+    }
+
+    private void limpiarTodo() {
+        needsCleanup = true;
+        if (binding != null && binding.etLegajo != null) {
+            binding.etLegajo.setText("");
+        }
+        vm.limpiarTodosDatos();
+        inicializarAdaptadores();
+    }
+
+    private void inicializarAdaptadores() {
+        // Crear lista con placeholder para Actividad
+        List<Actividad> actividadesPlaceholder = new ArrayList<>();
+        actividadesPlaceholder.add(new Actividad(-1, "Actividad"));
+        
+        // Crear lista con placeholder para Línea
+        List<Linea> lineasPlaceholder = new ArrayList<>();
+        lineasPlaceholder.add(new Linea(-1, "Línea"));
+
+        // Inicializar o actualizar el adapter de Actividad
+        if (actividadAdapter == null) {
+            actividadAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, actividadesPlaceholder);
+            actividadAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spnActividad.setAdapter(actividadAdapter);
+        } else {
+            actividadAdapter.clear();
+            actividadAdapter.addAll(actividadesPlaceholder);
+            actividadAdapter.notifyDataSetChanged();
+        }
+
+        // Inicializar o actualizar el adapter de Línea
+        if (lineaAdapter == null) {
+            lineaAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, lineasPlaceholder);
+            lineaAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spnLinea.setAdapter(lineaAdapter);
+        } else {
+            lineaAdapter.clear();
+            lineaAdapter.addAll(lineasPlaceholder);
+            lineaAdapter.notifyDataSetChanged();
+        }
     }
 
     @Override

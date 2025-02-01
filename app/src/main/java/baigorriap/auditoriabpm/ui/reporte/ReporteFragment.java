@@ -1,9 +1,12 @@
 package baigorriap.auditoriabpm.ui.reporte;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
@@ -52,6 +55,41 @@ public class ReporteFragment extends Fragment {
             NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
             navController.navigate(R.id.nav_estadisticas);
         });
+
+        binding.cardItemsNoOk.setOnClickListener(v -> {
+            mostrarDialogoLegajo();
+        });
+    }
+
+    private void mostrarDialogoLegajo() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        builder.setTitle("Ingresar Legajo");
+
+        final EditText input = new EditText(requireContext());
+        input.setHint("Legajo del operario");
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        builder.setView(input);
+
+        builder.setPositiveButton("Buscar", (dialog, which) -> {
+            String legajoStr = input.getText().toString();
+            if (!legajoStr.isEmpty()) {
+                try {
+                    int legajo = Integer.parseInt(legajoStr);
+                    Bundle args = new Bundle();
+                    args.putInt("legajo", legajo);
+                    NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
+                    navController.navigate(R.id.nav_items_nook, args);
+                } catch (NumberFormatException e) {
+                    Toast.makeText(requireContext(), "Por favor ingrese un número válido", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                Toast.makeText(requireContext(), "Por favor ingrese el legajo", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        builder.setNegativeButton("Cancelar", (dialog, which) -> dialog.cancel());
+
+        builder.show();
     }
 
     @Override

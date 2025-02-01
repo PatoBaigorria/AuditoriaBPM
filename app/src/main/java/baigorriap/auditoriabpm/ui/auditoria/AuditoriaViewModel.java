@@ -36,6 +36,10 @@ public class AuditoriaViewModel extends AndroidViewModel {
     private final Application application;
     private static final String TAG = "AuditoriaViewModel";
 
+    // Variables para mantener el estado
+    private int ultimoLegajo = 0;
+    private boolean datosOperarioCargados = false;
+
     public AuditoriaViewModel(@NonNull Application application) {
         super(application);
         this.application = application;
@@ -71,6 +75,12 @@ public class AuditoriaViewModel extends AndroidViewModel {
 
     public void limpiarItemsSeleccionados() {
         mListaItemsSeleccionados.setValue(new ArrayList<>());
+    }
+
+    public void limpiarDatosOperario() {
+        operario.setValue(null);
+        datosOperarioCargados = false;
+        ultimoLegajo = 0;
     }
 
     // Métodos para seleccionar y actualizar ítems
@@ -111,6 +121,8 @@ public class AuditoriaViewModel extends AndroidViewModel {
                 Log.d("API Response", "Código: " + response.code() + ", Cuerpo: " + response.body());
                 if (response.isSuccessful()) {
                     mAuditoriaGuardada.postValue(true);
+                    // Limpiar datos después de guardar exitosamente
+                    limpiarDatosOperario();
                 } else {
                     manejarError("Error al guardar auditoría. Código: " + response.code());
                 }
@@ -124,6 +136,13 @@ public class AuditoriaViewModel extends AndroidViewModel {
     }
 
     public void cargarOperario(int legajo) {
+        // Si ya tenemos los datos del operario y es el mismo legajo, no volvemos a cargar
+        if (datosOperarioCargados && ultimoLegajo == legajo) {
+            Log.d(TAG, "Usando datos en caché del operario: " + legajo);
+            return;
+        }
+
+        Log.d(TAG, "Cargando datos del operario: " + legajo);
         String token = ApiClient.leerToken(getApplication());
         if (token == null) {
             manejarError("No se encontró el token de autenticación");
@@ -137,14 +156,19 @@ public class AuditoriaViewModel extends AndroidViewModel {
                         if (response.isSuccessful() && response.body() != null) {
                             Operario op = response.body();
                             operario.setValue(op);
+                            ultimoLegajo = legajo;
+                            datosOperarioCargados = true;
+                            Log.d(TAG, "Datos del operario cargados correctamente");
                         } else {
                             manejarError("Error al cargar el operario: " + response.code());
+                            datosOperarioCargados = false;
                         }
                     }
 
                     @Override
                     public void onFailure(Call<Operario> call, Throwable t) {
                         manejarError("Error de conexión al cargar el operario: " + t.getMessage());
+                        datosOperarioCargados = false;
                     }
                 });
     }

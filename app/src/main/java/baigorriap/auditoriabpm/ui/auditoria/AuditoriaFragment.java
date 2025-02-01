@@ -18,6 +18,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentResultListener;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -51,8 +52,8 @@ public class AuditoriaFragment extends Fragment {
         binding = FragmentAuditoriaBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        // Inicializar el ViewModel
-        auditoriaViewModel = new ViewModelProvider(this).get(AuditoriaViewModel.class);
+        // Inicializar el ViewModel a nivel de actividad
+        auditoriaViewModel = new ViewModelProvider(requireActivity()).get(AuditoriaViewModel.class);
 
         // Configurar los observadores
         configurarObservadores();
@@ -129,9 +130,14 @@ public class AuditoriaFragment extends Fragment {
         });
 
         binding.imgBtnCancelar.setOnClickListener(v -> {
-            // Limpiar los datos y volver atrás
-            auditoriaViewModel.limpiarItemsSeleccionados();
-            requireActivity().onBackPressed();
+            // Notificar al HomeFragment que necesita resetear
+            Bundle result = new Bundle();
+            result.putBoolean("reset", true);
+            getParentFragmentManager().setFragmentResult("needsReset", result);
+            
+            // Navegar hacia atrás
+            NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
+            navController.navigateUp();
         });
 
         binding.imgBtnComentarios.setOnClickListener(v -> {
@@ -224,9 +230,14 @@ public class AuditoriaFragment extends Fragment {
                     .setTitle("Cancelar Auditoría")
                     .setMessage("¿Estás seguro de que quieres cancelar esta auditoría?")
                     .setPositiveButton("Sí", (dialog, which) -> {
-                        // Navega al HomeFragment
+                        // Notificar al HomeFragment que necesita resetear
+                        Bundle result = new Bundle();
+                        result.putBoolean("reset", true);
+                        getParentFragmentManager().setFragmentResult("needsReset", result);
+                        
+                        // Navegar hacia atrás
                         NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
-                        navController.navigate(R.id.action_auditoriaFragment_to_homeFragment);
+                        navController.navigateUp();
                     })
                     .setNegativeButton("No", null)
                     .show();
