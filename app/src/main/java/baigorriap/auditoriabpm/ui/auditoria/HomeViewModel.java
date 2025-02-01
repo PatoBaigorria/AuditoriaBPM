@@ -99,62 +99,6 @@ public class HomeViewModel extends AndroidViewModel {
     }
 
 
-    public void cargarDatosPorLegajo(int legajo) {
-        if (legajo <= 0) {
-            mErrorMessage.setValue("Ingrese un Legajo Válido");
-            return;
-        }
-
-        String token = "Bearer " + ApiClient.leerToken(application);
-        Log.d("HomeViewModel", "Cargando datos para legajo: " + legajo);
-
-        // Obtener actividades filtradas por legajo
-        Call<List<Actividad>> callActividades = ApiClient.getEndPoints().obtenerActividades(token, legajo);
-        callActividades.enqueue(new Callback<List<Actividad>>() {
-            @Override
-            public void onResponse(Call<List<Actividad>> call, Response<List<Actividad>> response) {
-                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                    Log.d("HomeViewModel", "Actividades recibidas: " + response.body().size());
-                    mListaActividad.setValue(response.body());
-                } else {
-                    Log.e("HomeViewModel", "Error al obtener actividades o lista vacía: " + 
-                          (response.isSuccessful() ? "Lista vacía" : "Código: " + response.code()));
-                    mListaActividad.setValue(new ArrayList<>());
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<Actividad>> call, Throwable t) {
-                Log.e("HomeViewModel", "Error al obtener actividades: " + t.getMessage());
-                mListaActividad.setValue(new ArrayList<>());
-                mErrorMessage.setValue("Error al cargar actividades: " + t.getMessage());
-            }
-        });
-
-        // Obtener líneas filtradas por legajo
-        Call<List<Linea>> callLineas = ApiClient.getEndPoints().obtenerLineas(token, legajo);
-        callLineas.enqueue(new Callback<List<Linea>>() {
-            @Override
-            public void onResponse(Call<List<Linea>> call, Response<List<Linea>> response) {
-                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                    Log.d("HomeViewModel", "Líneas recibidas: " + response.body().size());
-                    mListaLinea.setValue(response.body());
-                } else {
-                    Log.e("HomeViewModel", "Error al obtener líneas o lista vacía: " + 
-                          (response.isSuccessful() ? "Lista vacía" : "Código: " + response.code()));
-                    mListaLinea.setValue(new ArrayList<>());
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<Linea>> call, Throwable t) {
-                Log.e("HomeViewModel", "Error al obtener líneas: " + t.getMessage());
-                mListaLinea.setValue(new ArrayList<>());
-                mErrorMessage.setValue("Error al cargar líneas: " + t.getMessage());
-            }
-        });
-    }
-
     public void cargarOperarioPorLegajo(int legajo) {
         if (legajo <= 0) {
             mErrorMessage.setValue("Ingrese un Legajo Válido");
@@ -164,92 +108,151 @@ public class HomeViewModel extends AndroidViewModel {
         String token = "Bearer " + ApiClient.leerToken(application);
         Log.d("HomeViewModel", "Obteniendo operario con legajo: " + legajo);
 
-        // Realizar la llamada para obtener el Operario por legajo
         Call<Operario> callOperario = ApiClient.getEndPoints().obtenerOperario(token, legajo);
         callOperario.enqueue(new Callback<Operario>() {
             @Override
             public void onResponse(Call<Operario> call, Response<Operario> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    // Establecer el operario
-                    mOperario.setValue(response.body());
-                    Log.d("HomeViewModel", "Operario obtenido: " + response.body().toString());
+                    Operario operario = response.body();
+                    mOperario.setValue(operario);
+                    mIdOperario.setValue(operario.getIdOperario());
+                    Log.d("HomeViewModel", "Operario obtenido: " + operario.toString());
                 } else {
-                    // Si no se encuentra el operario, establecer null
                     mOperario.setValue(null);
+                    mIdOperario.setValue(null);
                     Log.e("HomeViewModel", "Operario no encontrado para legajo: " + legajo);
                 }
             }
 
             @Override
             public void onFailure(Call<Operario> call, Throwable t) {
+                mOperario.setValue(null);
+                mIdOperario.setValue(null);
                 mErrorMessage.setValue("Error en la obtención del operario: " + t.getMessage());
                 Log.e("HomeViewModel", "Error en la obtención del operario: " + t.getMessage());
             }
         });
     }
 
-    // Obtener todas las actividades
-    private void cargarTodasLasActividades() {
+    public void cargarDatosPorLegajo(int legajo) {
+        if (legajo <= 0) {
+            mErrorMessage.setValue("Ingrese un Legajo Válido");
+            return;
+        }
+
         String token = "Bearer " + ApiClient.leerToken(application);
-        Call<List<Actividad>> callTodasActividades = ApiClient.getEndPoints().obtenerTodasLasActividades(token);
-        callTodasActividades.enqueue(new Callback<List<Actividad>>() {
+        
+        // Primero obtener la actividad y línea específica del operario
+        Call<List<Actividad>> callActividadOperario = ApiClient.getEndPoints().obtenerActividades(token, legajo);
+        callActividadOperario.enqueue(new Callback<List<Actividad>>() {
             @Override
             public void onResponse(Call<List<Actividad>> call, Response<List<Actividad>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    List<Actividad> actividadesActuales = mListaActividad.getValue();
-                    List<Actividad> actividadesTodas = response.body();
-
-                    // Filtrar actividades duplicadas
-                    for (Actividad nuevaActividad : actividadesTodas) {
-                        if (!actividadesActuales.contains(nuevaActividad)) {
-                            actividadesActuales.add(nuevaActividad);
-                        }
-                    }
-
-                    // Actualizar la lista de actividades en LiveData
-                    mListaActividad.setValue(actividadesActuales);
-                } else {
-                    Log.e("HomeViewModel", "Error al obtener todas las actividades: " + response.code() + " - " + response.message());
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    Actividad actividadOperario = response.body().get(0);
+                    mIdActividad.setValue(actividadOperario.getIdActividad());
+                    
+                    // Después de obtener la actividad del operario, cargar todas las actividades
+                    cargarTodasLasActividades(token, actividadOperario);
                 }
             }
 
             @Override
             public void onFailure(Call<List<Actividad>> call, Throwable t) {
-                Toast.makeText(getApplication(), "Error en la obtención de todas las actividades: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                Log.e("HomeViewModel", "Error al obtener actividad del operario: " + t.getMessage());
+                cargarTodasLasActividades(token, null);
             }
         });
-    }
 
-
-    // Obtener todas las líneas
-    private void cargarTodasLasLineas() {
-        String token = "Bearer " + ApiClient.leerToken(application);
-        Call<List<Linea>> callTodasLineas = ApiClient.getEndPoints().obtenerTodasLasLineas(token);
-        callTodasLineas.enqueue(new Callback<List<Linea>>() {
+        // Obtener la línea específica del operario
+        Call<List<Linea>> callLineaOperario = ApiClient.getEndPoints().obtenerLineas(token, legajo);
+        callLineaOperario.enqueue(new Callback<List<Linea>>() {
             @Override
             public void onResponse(Call<List<Linea>> call, Response<List<Linea>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    List<Linea> lineasActuales = mListaLinea.getValue();
-                    List<Linea> lineasTodas = response.body();
-
-                    // Filtrar lineas duplicadas
-                    for (Linea nuevaLinea : lineasTodas) {
-                        if (!lineasActuales.contains(nuevaLinea)) {
-                            lineasActuales.add(nuevaLinea);
-                        }
-                    }
-                    // Actualizar la lista de actividades en LiveData
-                    mListaLinea.setValue(lineasActuales);
-                } else {
-                    Log.e("HomeViewModel", "Error al obtener todas las líneas: " + response.code() + " - " + response.message());
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    Linea lineaOperario = response.body().get(0);
+                    mIdLinea.setValue(lineaOperario.getIdLinea());
+                    
+                    // Después de obtener la línea del operario, cargar todas las líneas
+                    cargarTodasLasLineas(token, lineaOperario);
                 }
             }
 
             @Override
             public void onFailure(Call<List<Linea>> call, Throwable t) {
-                Toast.makeText(getApplication(), "Error en la obtención de todas las líneas: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                Log.e("HomeViewModel", "Error al obtener línea del operario: " + t.getMessage());
+                cargarTodasLasLineas(token, null);
             }
         });
+    }
+
+    private void cargarTodasLasActividades(String token, Actividad actividadSeleccionada) {
+        Call<List<Actividad>> callTodasActividades = ApiClient.getEndPoints().obtenerTodasLasActividades(token);
+        callTodasActividades.enqueue(new Callback<List<Actividad>>() {
+            @Override
+            public void onResponse(Call<List<Actividad>> call, Response<List<Actividad>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Actividad> todasActividades = new ArrayList<>();
+                    // Agregar el placeholder
+                    todasActividades.add(new Actividad(-1, "Actividad"));
+                    // Agregar todas las actividades
+                    todasActividades.addAll(response.body());
+                    mListaActividad.setValue(todasActividades);
+                    
+                    // Si hay una actividad seleccionada, asegurarnos de que esté en la lista
+                    if (actividadSeleccionada != null) {
+                        mIdActividad.setValue(actividadSeleccionada.getIdActividad());
+                    }
+                } else {
+                    limpiarSpinnersConHint();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Actividad>> call, Throwable t) {
+                Log.e("HomeViewModel", "Error al obtener todas las actividades: " + t.getMessage());
+                limpiarSpinnersConHint();
+            }
+        });
+    }
+
+    private void cargarTodasLasLineas(String token, Linea lineaSeleccionada) {
+        Call<List<Linea>> callTodasLineas = ApiClient.getEndPoints().obtenerTodasLasLineas(token);
+        callTodasLineas.enqueue(new Callback<List<Linea>>() {
+            @Override
+            public void onResponse(Call<List<Linea>> call, Response<List<Linea>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Linea> todasLineas = new ArrayList<>();
+                    // Agregar el placeholder
+                    todasLineas.add(new Linea(-1, "Línea"));
+                    // Agregar todas las líneas
+                    todasLineas.addAll(response.body());
+                    mListaLinea.setValue(todasLineas);
+                    
+                    // Si hay una línea seleccionada, asegurarnos de que esté en la lista
+                    if (lineaSeleccionada != null) {
+                        mIdLinea.setValue(lineaSeleccionada.getIdLinea());
+                    }
+                } else {
+                    limpiarSpinnersConHint();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Linea>> call, Throwable t) {
+                Log.e("HomeViewModel", "Error al obtener todas las líneas: " + t.getMessage());
+                limpiarSpinnersConHint();
+            }
+        });
+    }
+
+    public void limpiarSpinnersConHint() {
+        List<Actividad> actividadesVacias = new ArrayList<>();
+        actividadesVacias.add(new Actividad(-1, "Actividad"));
+        mListaActividad.setValue(actividadesVacias);
+
+        List<Linea> lineasVacias = new ArrayList<>();
+        lineasVacias.add(new Linea(-1, "Línea"));
+        mListaLinea.setValue(lineasVacias);
     }
 
     public void limpiarTodosDatos() {
@@ -258,8 +261,15 @@ public class HomeViewModel extends AndroidViewModel {
         mIdOperario.setValue(null);
         mIdActividad.setValue(null);
         mIdLinea.setValue(null);
-        mListaActividad.setValue(new ArrayList<>());
-        mListaLinea.setValue(new ArrayList<>());
+        limpiarSpinnersConHint();
         mLegajo.setValue("");
+    }
+
+    public void limpiarTodosDatos2() {
+        mOperario.setValue(null);
+        mIdActividad.setValue(null);
+        mIdLinea.setValue(null);
+        mListaActividad.setValue(null);
+        mListaLinea.setValue(null);
     }
 }

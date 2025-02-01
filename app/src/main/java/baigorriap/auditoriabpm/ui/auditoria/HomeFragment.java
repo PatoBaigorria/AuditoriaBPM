@@ -42,7 +42,6 @@ public class HomeFragment extends Fragment {
     private int idActividad;
     private int idLinea;
     private SharedPreferences sharedPreferences;
-    private boolean needsCleanup = false;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -58,23 +57,37 @@ public class HomeFragment extends Fragment {
         // Inicializa los Spinners
         spnActividad = binding.spnActividad;
         spnLinea = binding.spnLinea;
+
+        // Inicializar los spinners con placeholders al inicio
+        vm.limpiarSpinnersConHint();
         
+        // Crear y configurar adaptadores iniciales
+        List<Actividad> actividadesIniciales = new ArrayList<>();
+        actividadesIniciales.add(new Actividad(-1, "Actividad"));
+        actividadAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, actividadesIniciales);
+        actividadAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spnActividad.setAdapter(actividadAdapter);
+
+        List<Linea> lineasIniciales = new ArrayList<>();
+        lineasIniciales.add(new Linea(-1, "Línea"));
+        lineaAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, lineasIniciales);
+        lineaAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spnLinea.setAdapter(lineaAdapter);
+
         // Configura el TextView
         final TextView textView = binding.textHome;
         vm.getText().observe(getViewLifecycleOwner(), textView::setText);
         tvNombreOp = binding.tvNombreOp;
-
-        // Inicializar adaptadores con placeholders
-        inicializarAdaptadores();
 
         // Observa el LiveData del nombre del operario
         vm.getMOperario().observe(getViewLifecycleOwner(), operario -> {
             if (operario != null) {
                 tvNombreOp.setText(operario.getNombreCompleto());
                 idOperario = operario.getIdOperario();
-            } else if (needsCleanup) {
+            } else {
                 tvNombreOp.setText("");
-                needsCleanup = false;
+                // Limpiar spinners cuando no hay operario
+                vm.limpiarSpinnersConHint();
             }
         });
 
@@ -91,7 +104,15 @@ public class HomeFragment extends Fragment {
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 if (s.length() == 0 || s.length() <= 5) {
                     tvNombreOp.setText("");
-                    inicializarAdaptadores();
+                    vm.limpiarSpinnersConHint();
+                    if (actividadAdapter != null) {
+                        actividadAdapter.clear();
+                        actividadAdapter.notifyDataSetChanged();
+                    }
+                    if (lineaAdapter != null) {
+                        lineaAdapter.clear();
+                        lineaAdapter.notifyDataSetChanged();
+                    }
                 }
             }
 
@@ -109,39 +130,90 @@ public class HomeFragment extends Fragment {
                     vm.cargarOperarioPorLegajo(legajo);
                     vm.cargarDatosPorLegajo(legajo);
                     vm.cargarSupervisorPorId(idSupervisor);
-                    Toast.makeText(getContext(), "Cargando datos...", Toast.LENGTH_SHORT).show();
                 } catch (NumberFormatException e) {
                     Toast.makeText(getContext(), "Por favor, introduce un número de legajo válido", Toast.LENGTH_SHORT).show();
                 }
             } else {
-                inicializarAdaptadores();
+                vm.limpiarSpinnersConHint();
+                if (actividadAdapter != null) {
+                    actividadAdapter.clear();
+                    actividadAdapter.notifyDataSetChanged();
+                }
+                if (lineaAdapter != null) {
+                    lineaAdapter.clear();
+                    lineaAdapter.notifyDataSetChanged();
+                }
             }
             return true;
         });
 
-        // Observa la lista de actividades
+        // Observa el LiveData de la lista de actividades
         vm.getMListaActividad().observe(getViewLifecycleOwner(), actividades -> {
             if (actividades != null && !actividades.isEmpty()) {
-                Log.d("HomeFragment", "Recibidas " + actividades.size() + " actividades");
                 actividadAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, actividades);
                 actividadAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 spnActividad.setAdapter(actividadAdapter);
-            } else if (needsCleanup) {
-                Log.d("HomeFragment", "Lista de actividades vacía o nula");
-                inicializarAdaptadores();
+                
+                // Seleccionar la actividad del operario si existe
+                Integer idActividadOperario = vm.getMIdActividad().getValue();
+                if (idActividadOperario != null) {
+                    for (int i = 0; i < actividades.size(); i++) {
+                        if (actividades.get(i).getIdActividad() == idActividadOperario) {
+                            spnActividad.setSelection(i);
+                            break;
+                        }
+                    }
+                }
             }
         });
 
-        // Observa la lista de líneas
+        // Observa el LiveData de la lista de líneas
         vm.getMListaLinea().observe(getViewLifecycleOwner(), lineas -> {
             if (lineas != null && !lineas.isEmpty()) {
-                Log.d("HomeFragment", "Recibidas " + lineas.size() + " líneas");
                 lineaAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, lineas);
                 lineaAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 spnLinea.setAdapter(lineaAdapter);
-            } else if (needsCleanup) {
-                Log.d("HomeFragment", "Lista de líneas vacía o nula");
-                inicializarAdaptadores();
+                
+                // Seleccionar la línea del operario si existe
+                Integer idLineaOperario = vm.getMIdLinea().getValue();
+                if (idLineaOperario != null) {
+                    for (int i = 0; i < lineas.size(); i++) {
+                        if (lineas.get(i).getIdLinea() == idLineaOperario) {
+                            spnLinea.setSelection(i);
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+
+        // Observar cambios en el ID de actividad
+        vm.getMIdActividad().observe(getViewLifecycleOwner(), idActividad -> {
+            if (idActividad != null && actividadAdapter != null) {
+                List<Actividad> actividades = vm.getMListaActividad().getValue();
+                if (actividades != null) {
+                    for (int i = 0; i < actividades.size(); i++) {
+                        if (actividades.get(i).getIdActividad() == idActividad) {
+                            spnActividad.setSelection(i);
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+
+        // Observar cambios en el ID de línea
+        vm.getMIdLinea().observe(getViewLifecycleOwner(), idLinea -> {
+            if (idLinea != null && lineaAdapter != null) {
+                List<Linea> lineas = vm.getMListaLinea().getValue();
+                if (lineas != null) {
+                    for (int i = 0; i < lineas.size(); i++) {
+                        if (lineas.get(i).getIdLinea() == idLinea) {
+                            spnLinea.setSelection(i);
+                            break;
+                        }
+                    }
+                }
             }
         });
 
@@ -157,18 +229,25 @@ public class HomeFragment extends Fragment {
             Actividad selectedActividad = (Actividad) spnActividad.getSelectedItem();
             Linea selectedLinea = (Linea) spnLinea.getSelectedItem();
 
-            if (selectedActividad == null || selectedLinea == null) {
-                Toast.makeText(getContext(), "Debe seleccionar actividad y línea", Toast.LENGTH_SHORT).show();
+            if (selectedActividad == null || selectedActividad.getIdActividad() == -1) {
+                Toast.makeText(getContext(), "Por favor selecciona una actividad", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            // Navegar al siguiente fragmento con los datos
+            if (selectedLinea == null || selectedLinea.getIdLinea() == -1) {
+                Toast.makeText(getContext(), "Por favor selecciona una línea", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            idActividad = selectedActividad.getIdActividad();
+            idLinea = selectedLinea.getIdLinea();
+
             Bundle bundle = new Bundle();
             bundle.putInt("idOperario", idOperario);
-            bundle.putInt("idSupervisor", idSupervisor);
-            bundle.putInt("idActividad", selectedActividad.getIdActividad());
-            bundle.putInt("idLinea", selectedLinea.getIdLinea());
             bundle.putString("nombreOperario", nombreOperario);
+            bundle.putInt("idSupervisor", idSupervisor);
+            bundle.putInt("idActividad", idActividad);
+            bundle.putInt("idLinea", idLinea);
 
             NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
             navController.navigate(R.id.nav_auditoria, bundle);
@@ -176,51 +255,39 @@ public class HomeFragment extends Fragment {
 
         getParentFragmentManager().setFragmentResultListener("needsReset", this, (requestKey, result) -> {
             if (result.getBoolean("reset", false)) {
-                limpiarTodo();
+                vm.limpiarTodosDatos();
+                if (binding != null && binding.etLegajo != null) {
+                    binding.etLegajo.setText("");
+                }
             }
         });
 
         return root;
     }
 
-    private void limpiarTodo() {
-        needsCleanup = true;
-        if (binding != null && binding.etLegajo != null) {
-            binding.etLegajo.setText("");
-        }
-        vm.limpiarTodosDatos();
-        inicializarAdaptadores();
-    }
-
-    private void inicializarAdaptadores() {
-        // Crear lista con placeholder para Actividad
-        List<Actividad> actividadesPlaceholder = new ArrayList<>();
-        actividadesPlaceholder.add(new Actividad(-1, "Actividad"));
-        
-        // Crear lista con placeholder para Línea
-        List<Linea> lineasPlaceholder = new ArrayList<>();
-        lineasPlaceholder.add(new Linea(-1, "Línea"));
-
-        // Inicializar o actualizar el adapter de Actividad
-        if (actividadAdapter == null) {
-            actividadAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, actividadesPlaceholder);
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Verificar si venimos de otra vista y limpiar datos
+        if (getArguments() == null) {  // Si no hay argumentos, significa que no es la primera carga
+            vm.limpiarTodosDatos();
+            if (binding != null && binding.etLegajo != null) {
+                binding.etLegajo.setText("");
+                tvNombreOp.setText("");
+            }
+            
+            // Inicializar spinners con placeholders
+            List<Actividad> actividadesIniciales = new ArrayList<>();
+            actividadesIniciales.add(new Actividad(-1, "Actividad"));
+            actividadAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, actividadesIniciales);
             actividadAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
             spnActividad.setAdapter(actividadAdapter);
-        } else {
-            actividadAdapter.clear();
-            actividadAdapter.addAll(actividadesPlaceholder);
-            actividadAdapter.notifyDataSetChanged();
-        }
 
-        // Inicializar o actualizar el adapter de Línea
-        if (lineaAdapter == null) {
-            lineaAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, lineasPlaceholder);
+            List<Linea> lineasIniciales = new ArrayList<>();
+            lineasIniciales.add(new Linea(-1, "Línea"));
+            lineaAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, lineasIniciales);
             lineaAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
             spnLinea.setAdapter(lineaAdapter);
-        } else {
-            lineaAdapter.clear();
-            lineaAdapter.addAll(lineasPlaceholder);
-            lineaAdapter.notifyDataSetChanged();
         }
     }
 

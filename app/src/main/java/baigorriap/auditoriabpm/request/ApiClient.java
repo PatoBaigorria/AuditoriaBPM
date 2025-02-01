@@ -75,6 +75,12 @@ public class ApiClient {
         @GET("Lineas/todas")
         Call<List<Linea>> obtenerTodasLasLineas(@Header("Authorization") String token);
 
+        @GET("Actividades")
+        Call<List<Actividad>> obtenerTodasActividades(@Header("Authorization") String token);
+
+        @GET("Lineas")
+        Call<List<Linea>> obtenerTodasLineas(@Header("Authorization") String token);
+
         @GET("Operarios/validar-legajo/{legajo}")
         Call<Boolean> verificarLegajo(@Header("Authorization") String token, @Path("legajo") int legajo);
 
