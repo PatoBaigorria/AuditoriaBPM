@@ -11,11 +11,14 @@ public class Auditoria implements Serializable {
     private int idLinea;
     private Date fecha;
     private String comentario;
+    private String firma;        // SVG de la firma
+    private boolean noConforme;  // Indica si el operario está conforme con la auditoría
 
     public Auditoria() {
     }
 
-    public Auditoria(int idAuditoria, int idSupervisor, int idOperario, int idActividad, int idLinea, Date fecha, String comentario) {
+    public Auditoria(int idAuditoria, int idSupervisor, int idOperario, int idActividad, 
+                    int idLinea, Date fecha, String comentario, String firma, boolean noConforme) {
         this.idAuditoria = idAuditoria;
         this.idSupervisor = idSupervisor;
         this.idOperario = idOperario;
@@ -23,6 +26,8 @@ public class Auditoria implements Serializable {
         this.idLinea = idLinea;
         this.fecha = fecha;
         this.comentario = comentario;
+        this.firma = firma;
+        this.noConforme = noConforme;
     }
 
     public int getIdAuditoria() {
@@ -79,5 +84,21 @@ public class Auditoria implements Serializable {
 
     public void setComentario(String comentario) {
         this.comentario = comentario;
+    }
+
+    public String getFirma() {
+        return firma;
+    }
+
+    public void setFirma(String firma) {
+        this.firma = firma;
+    }
+
+    public boolean isNoConforme() {
+        return noConforme;
+    }
+
+    public void setNoConforme(boolean noConforme) {
+        this.noConforme = noConforme;
     }
 }

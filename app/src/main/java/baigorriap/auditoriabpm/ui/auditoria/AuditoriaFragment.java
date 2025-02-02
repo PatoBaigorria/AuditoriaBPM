@@ -35,6 +35,7 @@ import baigorriap.auditoriabpm.databinding.FragmentAuditoriaBinding;
 import baigorriap.auditoriabpm.model.Auditoria;
 import baigorriap.auditoriabpm.model.AuditoriaItemBPM;
 import baigorriap.auditoriabpm.model.ItemAuditoriaRequest;
+import baigorriap.auditoriabpm.model.Operario;
 
 public class AuditoriaFragment extends Fragment {
 
@@ -95,40 +96,6 @@ public class AuditoriaFragment extends Fragment {
     }
 
     private void configurarBotones() {
-        binding.imgBtnGuardar.setOnClickListener(v -> {
-            // Obtener los valores seleccionados
-            if (idOperario == 0) {
-                Toast.makeText(requireContext(), "Debe cargar un operario", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            // Obtener los ítems seleccionados del ViewModel
-            List<AuditoriaItemBPM> itemsSeleccionados = auditoriaViewModel.getMListaItemsSeleccionados().getValue();
-            if (itemsSeleccionados == null || itemsSeleccionados.isEmpty()) {
-                Toast.makeText(requireContext(), "Debe seleccionar al menos un ítem", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            // Convertir los ítems seleccionados al formato requerido por la API
-            List<ItemAuditoriaRequest> items = new ArrayList<>();
-            for (AuditoriaItemBPM item : itemsSeleccionados) {
-                items.add(new ItemAuditoriaRequest(item.getIdItemBPM(), item.getEstado().toString()));
-            }
-
-            // Obtener el comentario
-            String comentario = auditoriaViewModel.getComentario().getValue();
-            if (comentario == null) {
-                comentario = "";
-            }
-
-            // Obtener el ID del supervisor de SharedPreferences
-            SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
-            int idSupervisor = sharedPreferences.getInt("idSupervisor", 0);
-
-            // Guardar la auditoría
-            auditoriaViewModel.guardarAuditoria(idOperario, idSupervisor, idActividad, idLinea, comentario, items);
-        });
-
         binding.imgBtnCancelar.setOnClickListener(v -> {
             // Notificar al HomeFragment que necesita resetear
             Bundle result = new Bundle();
@@ -146,8 +113,26 @@ public class AuditoriaFragment extends Fragment {
         });
 
         binding.imgBtnFirma.setOnClickListener(v -> {
-            // Mostrar diálogo para firma
-            // TODO: Implementar diálogo de firma
+            // Validar que haya un operario cargado
+            if (idOperario == 0) {
+                Toast.makeText(requireContext(), "Debe cargar un operario", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Validar que haya items seleccionados
+            if (!auditoriaViewModel.tieneItemsSeleccionados()) {
+                Toast.makeText(requireContext(), "Debe seleccionar al menos un ítem", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Validar que todos los items tengan un estado seleccionado
+            if (!auditoriaViewModel.todosLosItemsTienenEstado()) {
+                Toast.makeText(requireContext(), "Debe seleccionar un estado para todos los ítems", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            FirmaDialogFragment dialogFragment = FirmaDialogFragment.newInstance();
+            dialogFragment.show(getChildFragmentManager(), "FirmaDialog");
         });
     }
 
@@ -170,6 +155,14 @@ public class AuditoriaFragment extends Fragment {
             if (nombreOperario != null && !nombreOperario.isEmpty()) {
                 binding.tvCampoNomb.setText(nombreOperario);
             }
+
+            // Crear y establecer el operario en el ViewModel
+            Operario operario = new Operario();
+            operario.setIdOperario(idOperario);
+            operario.setIdActividad(idActividad);
+            operario.setIdLinea(idLinea);
+            operario.setNombre(nombreOperario);
+            auditoriaViewModel.setOperario(operario);
         }
         
         // Configurar la fecha actual
@@ -189,6 +182,10 @@ public class AuditoriaFragment extends Fragment {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
         String formattedDate = dateFormat.format(currentDate);
         binding.tvCampoFecha.setText(formattedDate);
+
+        // Establecer el total de items en el ViewModel
+        int totalItems = tableLayout.getChildCount() - 1; // -1 porque la primera fila es el encabezado
+        auditoriaViewModel.setTotalItems(totalItems);
 
         // Lógica para iterar sobre los RadioGroups en el TableLayout
         for (int i = 1; i < tableLayout.getChildCount(); i++) {
@@ -222,9 +219,6 @@ public class AuditoriaFragment extends Fragment {
     }
 
     private void configurarListeners() {
-        // Configurar el botón "Guardar"
-        binding.imgBtnGuardar.setOnClickListener(v -> guardarAuditoria());
-
         binding.imgBtnCancelar.setOnClickListener(v -> {
             new AlertDialog.Builder(requireContext())
                     .setTitle("Cancelar Auditoría")
@@ -261,58 +255,6 @@ public class AuditoriaFragment extends Fragment {
 
             builder.show();
         });
-    }
-
-    private void guardarAuditoria() {
-
-        boolean todosSeleccionados = true;
-
-        for (int i = 1; i < tableLayout.getChildCount(); i++) {
-            TableRow row = (TableRow) tableLayout.getChildAt(i);
-
-            RadioGroup radioGroup = row.findViewById(getResources().getIdentifier("radioGroup" + i, "id", requireContext().getPackageName()));
-            // Verificar si el RadioGroup tiene algún elemento seleccionado
-            if (radioGroup.getCheckedRadioButtonId() == -1) {
-                todosSeleccionados = false;
-                break;
-            }
-        }
-
-        if (!todosSeleccionados) {
-            // Mostrar un mensaje si algún ítem no tiene selección
-            Toast.makeText(getContext(), "Debe seleccionar un estado para cada ítem", Toast.LENGTH_SHORT).show();
-        } else {
-            // Si todos los ítems están seleccionados, procede a guardar
-            Auditoria auditoria = new Auditoria();
-            auditoria.setIdSupervisor(idSupervisor);
-            auditoria.setIdOperario(idOperario);
-            auditoria.setIdActividad(idActividad);
-            auditoria.setIdLinea(idLinea);
-            auditoria.setFecha(new Date());
-            // Obtener el comentario temporal desde el ViewModel
-            String comentario = auditoriaViewModel.getComentario().getValue();
-            auditoria.setComentario(comentario != null ? comentario : "");
-
-
-            List<AuditoriaItemBPM> itemsSeleccionados = auditoriaViewModel.getMListaItemsSeleccionados().getValue();
-            if (itemsSeleccionados == null) {
-                itemsSeleccionados = new ArrayList<>();
-            }
-
-            List<ItemAuditoriaRequest> itemsRequest = new ArrayList<>();
-            for (AuditoriaItemBPM item : itemsSeleccionados) {
-                ItemAuditoriaRequest requestItem = new ItemAuditoriaRequest();
-                requestItem.setIdItemBPM(item.getIdItemBPM());
-                requestItem.setEstado(item.getEstado().toString());
-                itemsRequest.add(requestItem);
-            }
-            auditoriaViewModel.guardarAuditoria(idOperario, idSupervisor, idActividad, idLinea, auditoria.getComentario(), itemsRequest);
-
-            requireView().postDelayed(() -> {
-                NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
-                navController.navigate(R.id.action_auditoriaFragment_to_homeFragment);
-            }, 2000);  // 2 segundos
-        }
     }
 
     private int obtenerIdDelItem(TableRow row) {

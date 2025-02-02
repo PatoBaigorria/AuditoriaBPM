@@ -16,6 +16,8 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import java.io.IOException;
+
 public class LoginActivityViewModel extends AndroidViewModel {
     private SharedPreferences sharedPreferences;
 
@@ -25,25 +27,34 @@ public class LoginActivityViewModel extends AndroidViewModel {
     }
 
     public void logueo(String legajo, String clave, LoginCallback callback) {
+        Log.d("Login", "Intentando login con legajo: " + legajo);
         ApiClient.MisEndPoints api = ApiClient.getEndPoints();
         Call<String> call = api.login(legajo, clave);
         call.enqueue(new Callback<String>() {
             @Override
             public void onResponse(Call<String> call, Response<String> response) {
+                Log.d("Login", "Código de respuesta: " + response.code());
                 if (response.isSuccessful()) {
                     String token = response.body();
+                    Log.d("Login", "Token recibido: " + token);
                     guardarToken(token);
-                    Log.d("salida", "Inicio de sesión exitoso");
+                    Log.d("Login", "Token guardado, iniciando MainActivity");
                     iniciarMainActivity(callback);
                 } else {
-                    Toast.makeText(getApplication(), "Legajo o contraseña incorrecta", Toast.LENGTH_LONG).show();
+                    try {
+                        String errorBody = response.errorBody() != null ? response.errorBody().string() : "Error desconocido";
+                        Log.e("Login", "Error en login: " + errorBody);
+                        Toast.makeText(getApplication(), "Legajo o contraseña incorrecta", Toast.LENGTH_LONG).show();
+                    } catch (IOException e) {
+                        Log.e("Login", "Error al leer error body", e);
+                    }
                 }
             }
 
             @Override
             public void onFailure(Call<String> call, Throwable throwable) {
-                Toast.makeText(getApplication(), "Falla en el inicio de sesión", Toast.LENGTH_LONG).show();
-                Log.d("Login", "Falla en el inicio de sesión: " + throwable.getMessage());
+                Log.e("Login", "Error de conexión: " + throwable.getMessage(), throwable);
+                Toast.makeText(getApplication(), "Falla en el inicio de sesión: " + throwable.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
     }

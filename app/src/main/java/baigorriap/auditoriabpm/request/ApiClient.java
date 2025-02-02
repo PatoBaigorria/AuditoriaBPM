@@ -14,6 +14,8 @@ import baigorriap.auditoriabpm.model.AltaAuditoriaRequest;
 import baigorriap.auditoriabpm.model.Auditoria;
 import baigorriap.auditoriabpm.model.AuditoriaItemBPM;
 import baigorriap.auditoriabpm.model.EstadisticasAuditoria;
+import baigorriap.auditoriabpm.model.Firma;
+import baigorriap.auditoriabpm.model.FirmaPatron;
 import baigorriap.auditoriabpm.model.ItemBPM;
 import baigorriap.auditoriabpm.model.ItemNoOk;
 import baigorriap.auditoriabpm.model.Linea;
@@ -86,6 +88,15 @@ public class ApiClient {
 
         @POST("Auditorias/alta-auditoria-completa")
         Call<ResponseBody> darDeAltaAuditoria(@Header("Authorization") String token, @Body AltaAuditoriaRequest request);
+
+        @POST("FirmaPatron/alta")
+        Call<ResponseBody> guardarFirmaPatron(@Header("Authorization") String token, @Body FirmaPatron firmaPatron);
+
+        @POST("FirmaPatron/verificar")
+        Call<Boolean> verificarFirma(@Header("Authorization") String token, @Body FirmaPatron firma);
+
+        @GET("FirmaPatron/operario/{idOperario}")
+        Call<FirmaPatron> obtenerFirmaPatron(@Header("Authorization") String token, @Path("idOperario") int idOperario);
 
         @GET("Auditorias/auditorias-operario")
         Call<List<OperarioSinAuditoria>> obtenerOperariosSinAuditorias(@Header("Authorization") String token);

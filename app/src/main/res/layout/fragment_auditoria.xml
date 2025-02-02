@@ -660,54 +660,36 @@
     </TableLayout>
 
     <ImageButton
-        android:id="@+id/imgBtnGuardar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="60dp"
-        android:layout_marginTop="30dp"
-        android:layout_marginEnd="7dp"
-        android:src="@drawable/ic_save2"
-        android:background="@android:color/transparent"
-        app:layout_constraintEnd_toStartOf="@+id/imgBtnCancelar"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tableItems" />
-
-    <ImageButton
         android:id="@+id/imgBtnCancelar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="30dp"
-        android:layout_marginEnd="28dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="@null"
         android:src="@drawable/ic_cancel"
-        android:background="@android:color/transparent"
-        app:layout_constraintEnd_toStartOf="@+id/imgBtnFirma"
-        app:layout_constraintStart_toEndOf="@+id/imgBtnGuardar"
-        app:layout_constraintTop_toBottomOf="@+id/tableItems" />
-
-    <ImageButton
-        android:id="@+id/imgBtnFirma"
-        android:layout_width="87dp"
-        android:layout_height="77dp"
-        android:layout_marginTop="28dp"
-        android:layout_marginEnd="20dp"
-        android:src="@drawable/ic_firma2"
-        android:background="@android:color/transparent"
-        app:layout_constraintEnd_toStartOf="@+id/imgBtnComentarios"
-        app:layout_constraintStart_toEndOf="@+id/imgBtnCancelar"
-        app:layout_constraintTop_toBottomOf="@+id/tableItems" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <ImageButton
         android:id="@+id/imgBtnComentarios"
-        android:layout_width="77dp"
-        android:layout_height="71dp"
-        android:layout_marginTop="30dp"
-        android:layout_marginEnd="35dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:background="@null"
         android:src="@drawable/ic_coment"
-        android:background="@android:color/transparent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.941"
-        app:layout_constraintStart_toEndOf="@+id/imgBtnFirma"
-        app:layout_constraintTop_toBottomOf="@+id/tableItems" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/imgBtnFirma"
+        app:layout_constraintStart_toEndOf="@+id/imgBtnCancelar" />
+
+    <ImageButton
+        android:id="@+id/imgBtnFirma"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="@null"
+        android:src="@drawable/ic_firma2"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

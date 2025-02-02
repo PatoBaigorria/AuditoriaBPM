@@ -9,14 +9,18 @@ public class AltaAuditoriaRequest {
     private int idLinea; // Agregar este campo
     private String comentario; // Agregar este campo
     private List<ItemAuditoriaRequest> items; // Cambiar AuditoriaItemBPM a ItemAuditoriaRequest
+    private String firma;
+    private boolean noConforme;
 
-    public AltaAuditoriaRequest(int idOperario, int idSupervisor, int idActividad, int idLinea, String comentario, List<ItemAuditoriaRequest> items) {
+    public AltaAuditoriaRequest(int idOperario, int idSupervisor, int idActividad, int idLinea, String comentario, List<ItemAuditoriaRequest> items, String firma, boolean noConforme) {
         this.idOperario = idOperario;
         this.idSupervisor = idSupervisor;
         this.idActividad = idActividad;
         this.idLinea = idLinea;
         this.comentario = comentario;
         this.items = items;
+        this.firma = firma;
+        this.noConforme = noConforme;
     }
 
     // Getters y setters
@@ -66,5 +70,21 @@ public class AltaAuditoriaRequest {
 
     public void setItems(List<ItemAuditoriaRequest> items) {
         this.items = items;
+    }
+
+    public String getFirma() {
+        return firma;
+    }
+
+    public void setFirma(String firma) {
+        this.firma = firma;
+    }
+
+    public boolean isNoConforme() {
+        return noConforme;
+    }
+
+    public void setNoConforme(boolean noConforme) {
+        this.noConforme = noConforme;
     }
 }
