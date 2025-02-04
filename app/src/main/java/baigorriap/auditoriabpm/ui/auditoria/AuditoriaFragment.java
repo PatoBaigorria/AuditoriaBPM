@@ -121,7 +121,7 @@ public class AuditoriaFragment extends Fragment {
 
             // Validar que haya items seleccionados
             if (!auditoriaViewModel.tieneItemsSeleccionados()) {
-                Toast.makeText(requireContext(), "Debe seleccionar al menos un ítem", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), "Debe seleccionar un estado para todos los ítems", Toast.LENGTH_SHORT).show();
                 return;
             }
 

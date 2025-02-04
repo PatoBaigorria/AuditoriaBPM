@@ -58,24 +58,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tilLegajo" />
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/tilActividad"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+    <Spinner
+        android:id="@+id/spnActividad"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="59dp"
         android:layout_marginTop="24dp"
-        android:hint="Actividad"
+        android:background="@drawable/rectangulo_3d"
+        android:textAlignment="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvNombreOp">
-
-        <Spinner
-            android:id="@+id/spnActividad"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="48dp"
-            android:paddingVertical="12dp"/>
-    </com.google.android.material.textfield.TextInputLayout>
+        app:layout_constraintTop_toBottomOf="@+id/tvNombreOp" />
 
     <TextView
         android:id="@+id/tvLeyendaAct"
@@ -88,26 +80,18 @@
         android:textColor="@android:color/darker_gray"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tilActividad" />
+        app:layout_constraintTop_toBottomOf="@+id/spnActividad" />
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/tilLinea"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+    <Spinner
+        android:id="@+id/spnLinea"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="59dp"
         android:layout_marginTop="24dp"
-        android:hint="Línea"
+        android:background="@drawable/rectangulo_3d"
+        android:textAlignment="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvLeyendaAct">
-
-        <Spinner
-            android:id="@+id/spnLinea"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="48dp"
-            android:paddingVertical="12dp"/>
-    </com.google.android.material.textfield.TextInputLayout>
+        app:layout_constraintTop_toBottomOf="@+id/tvLeyendaAct" />
 
     <TextView
         android:id="@+id/tvLeyendaLin"
@@ -120,7 +104,7 @@
         android:textColor="@android:color/darker_gray"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tilLinea" />
+        app:layout_constraintTop_toBottomOf="@+id/spnLinea" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btSiguiente"

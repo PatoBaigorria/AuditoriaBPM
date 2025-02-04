@@ -7,68 +7,81 @@
     tools:context=".ui.auditoria.AuditoriaFragment">
 
     <!-- Campo Operario y Fecha tal como lo tienes -->
-    <TextView
-        android:id="@+id/tvNombOp"
-        android:layout_width="79dp"
-        android:layout_height="35dp"
-        android:layout_marginStart="5dp"
-        android:layout_marginTop="32dp"
-        android:text="Operario:"
-        android:textAlignment="center"
-        android:textSize="16dp"
-        android:textColor="@android:color/black"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/tvCampoNomb"
-        android:layout_width="128dp"
-        android:layout_height="40dp"
-        android:layout_marginTop="32dp"
-        android:ems="15"
-        android:inputType="text"
-        android:textColor="@android:color/black"
-        android:textSize="16dp"
-        app:layout_constraintStart_toEndOf="@+id/tvNombOp"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/tvFecha"
-        android:layout_width="wrap_content"
-        android:layout_height="35dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="32dp"
-        android:text="Fecha: "
-        android:textAlignment="center"
-        android:textSize="16dp"
-        android:textColor="@android:color/black"
-        app:layout_constraintStart_toEndOf="@+id/tvCampoNomb"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/tvCampoFecha"
-        android:layout_width="wrap_content"
-        android:layout_height="35dp"
-        android:layout_marginStart="36dp"
-        android:layout_marginTop="33dp"
-        android:layout_marginEnd="73dp"
-        android:textSize="16dp"
-        android:textColor="@android:color/black"
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardInfo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="18dp"
+        android:layout_marginTop="44dp"
+        android:layout_marginBottom="104dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/tvFecha"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/tvNombOp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Operario:"
+                android:textColor="@android:color/black"
+                android:textSize="16sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/tvCampoNomb"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@android:color/black"
+                android:textSize="16sp"
+                app:layout_constraintStart_toEndOf="@+id/tvNombOp"
+                app:layout_constraintTop_toTopOf="@+id/tvNombOp"
+                app:layout_constraintEnd_toStartOf="@+id/tvFecha"/>
+
+            <TextView
+                android:id="@+id/tvFecha"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Fecha:"
+                android:textColor="@android:color/black"
+                android:textSize="16sp"
+                app:layout_constraintEnd_toStartOf="@+id/tvCampoFecha"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/tvCampoFecha"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:textColor="@android:color/black"
+                android:textSize="16sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/tvFecha" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
 
     <!-- Aquí comienza el TableLayout para los ítems a evaluar -->
     <TableLayout
         android:id="@+id/tableItems"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="32dp"
         android:stretchColumns="1,2,3"
         android:shrinkColumns="1"
         android:divider="?android:dividerHorizontal"
         android:showDividers="middle"
-        app:layout_constraintTop_toBottomOf="@+id/tvCampoFecha"
+        app:layout_constraintTop_toBottomOf="@+id/cardInfo"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -659,37 +672,93 @@
         </TableRow>
     </TableLayout>
 
-    <ImageButton
-        android:id="@+id/imgBtnCancelar"
-        android:layout_width="wrap_content"
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardButtons"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginBottom="16dp"
-        android:background="@null"
-        android:src="@drawable/ic_cancel"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <ImageButton
-        android:id="@+id/imgBtnComentarios"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:background="@null"
-        android:src="@drawable/ic_coment"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/imgBtnFirma"
-        app:layout_constraintStart_toEndOf="@+id/imgBtnCancelar" />
-
-    <ImageButton
-        android:id="@+id/imgBtnFirma"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
-        android:background="@null"
-        android:src="@drawable/ic_firma2"
+        android:layout_marginBottom="32dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_marginEnd="48dp">
+
+                <ImageButton
+                    android:id="@+id/imgBtnCancelar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/button_hover_background"
+                    android:src="@drawable/ic_cancel"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cancelar"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="8dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_marginEnd="48dp">
+
+                <ImageButton
+                    android:id="@+id/imgBtnComentarios"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/button_hover_background"
+                    android:src="@drawable/ic_coment"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Comentarios"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="8dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/imgBtnFirma"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Firma"
+                    android:textAllCaps="false"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    app:icon="@drawable/ic_firma2"
+                    app:iconSize="24dp"
+                    app:iconGravity="top"
+                    app:iconPadding="8dp"
+                    style="@style/Widget.MaterialComponents.Button"/>
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

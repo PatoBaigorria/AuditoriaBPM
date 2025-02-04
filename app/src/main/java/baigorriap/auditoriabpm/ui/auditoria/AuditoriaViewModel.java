@@ -180,7 +180,7 @@ public class AuditoriaViewModel extends AndroidViewModel {
         List<AuditoriaItemBPM> itemsSeleccionados = mListaItemsSeleccionados.getValue();
         if (itemsSeleccionados == null || itemsSeleccionados.isEmpty()) {
             Log.e(TAG, "Error: No hay items seleccionados");
-            errorMessage.setValue("Debe seleccionar al menos un ítem");
+            errorMessage.setValue("Debe seleccionar  un estado para todos los ítems");
             callback.onAuditoriaGuardada(false);
             return;
         }
