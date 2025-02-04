@@ -114,10 +114,9 @@ public class AuditoriaFragment extends Fragment {
 
         binding.imgBtnFirma.setOnClickListener(v -> {
             // Validar que haya un operario cargado
-            if (idOperario == 0) {
-                Toast.makeText(requireContext(), "Debe cargar un operario", Toast.LENGTH_SHORT).show();
-                return;
-            }
+            if (idOperario == 0)
+
+
 
             // Validar que haya items seleccionados
             if (!auditoriaViewModel.tieneItemsSeleccionados()) {
