@@ -14,7 +14,6 @@ import baigorriap.auditoriabpm.model.AltaAuditoriaRequest;
 import baigorriap.auditoriabpm.model.Auditoria;
 import baigorriap.auditoriabpm.model.AuditoriaItemBPM;
 import baigorriap.auditoriabpm.model.EstadisticasAuditoria;
-import baigorriap.auditoriabpm.model.Firma;
 import baigorriap.auditoriabpm.model.FirmaPatron;
 import baigorriap.auditoriabpm.model.ItemBPM;
 import baigorriap.auditoriabpm.model.ItemNoOk;
@@ -87,7 +86,7 @@ public class ApiClient {
         Call<Boolean> verificarLegajo(@Header("Authorization") String token, @Path("legajo") int legajo);
 
         @POST("Auditorias/alta-auditoria-completa")
-        Call<ResponseBody> darDeAltaAuditoria(@Header("Authorization") String token, @Body AltaAuditoriaRequest request);
+        Call<ResponseBody> altaAuditoriaCompleta(@Header("Authorization") String token, @Body AltaAuditoriaRequest auditoria);
 
         @POST("FirmaPatron/alta")
         Call<ResponseBody> guardarFirmaPatron(@Header("Authorization") String token, @Body FirmaPatron firmaPatron);
@@ -101,7 +100,7 @@ public class ApiClient {
         @GET("Auditorias/auditorias-operario")
         Call<List<OperarioSinAuditoria>> obtenerOperariosSinAuditorias(@Header("Authorization") String token);
 
-        @GET("Auditorias/cantidad-auditorias-mes-a-mes")
+        @GET("Auditorias/estadisticas")
         Call<Map<String, EstadisticasAuditoria>> obtenerEstadisticasAuditoria(
                 @Header("Authorization") String token, 
                 @Query("anioInicio") int anioInicio,

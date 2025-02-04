@@ -31,7 +31,6 @@ import java.util.TimeZone;
 
 import baigorriap.auditoriabpm.model.Actividad;
 import baigorriap.auditoriabpm.model.AuditoriaItemBPM;
-import baigorriap.auditoriabpm.model.Firma;
 import baigorriap.auditoriabpm.model.FirmaPatron;
 import baigorriap.auditoriabpm.model.ItemAuditoriaRequest;
 import baigorriap.auditoriabpm.model.Linea;
@@ -50,13 +49,14 @@ import java.security.NoSuchAlgorithmException;
 
 public class AuditoriaViewModel extends AndroidViewModel {
     private final MutableLiveData<String> errorMessage = new MutableLiveData<>();
-    private final MutableLiveData<Boolean> mAuditoriaGuardada = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> mAuditoriaGuardada = new MutableLiveData<>(false);
     private final MutableLiveData<List<AuditoriaItemBPM>> mListaItemsSeleccionados = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<String> comentario = new MutableLiveData<>("");
     private final MutableLiveData<Operario> operario = new MutableLiveData<>();
     private final MutableLiveData<String> firma = new MutableLiveData<>();
     private final MutableLiveData<Boolean> noConforme = new MutableLiveData<>();
     private final MutableLiveData<Integer> mTotalItems = new MutableLiveData<>(0);
+    private boolean isNoConforme = false; // Variable para guardar el estado de noConforme
     private final Application application;
     private static final String TAG = "AuditoriaViewModel";
 
@@ -78,6 +78,7 @@ public class AuditoriaViewModel extends AndroidViewModel {
     }
 
     public void setMAuditoriaGuardada(Boolean value) {
+        Log.d(TAG, "setMAuditoriaGuardada llamado con valor: " + value);
         mAuditoriaGuardada.setValue(value);
     }
 
@@ -162,254 +163,61 @@ public class AuditoriaViewModel extends AndroidViewModel {
     }
 
     // Método para guardar auditoría
-    public void guardarAuditoria() {
-        // Validar que haya un operario seleccionado
-        if (operario.getValue() == null || operario.getValue().getIdOperario() == 0) {
-            errorMessage.setValue("Debe cargar un operario");
+    public interface GuardarAuditoriaCallback {
+        void onAuditoriaGuardada(boolean exitoso);
+    }
+
+    public void guardarAuditoria(GuardarAuditoriaCallback callback) {
+        Log.d(TAG, "Iniciando guardarAuditoria()");
+        
+        if (firma.getValue() == null || firma.getValue().isEmpty()) {
+            Log.e(TAG, "Error: Firma vacía o nula");
+            errorMessage.setValue("Se requiere una firma");
+            callback.onAuditoriaGuardada(false);
             return;
         }
 
-        // Validar que haya items seleccionados
-        if (!tieneItemsSeleccionados()) {
+        List<AuditoriaItemBPM> itemsSeleccionados = mListaItemsSeleccionados.getValue();
+        if (itemsSeleccionados == null || itemsSeleccionados.isEmpty()) {
+            Log.e(TAG, "Error: No hay items seleccionados");
             errorMessage.setValue("Debe seleccionar al menos un ítem");
-            return;
-        }
-
-        // Validar que todos los items tengan un estado seleccionado
-        if (!todosLosItemsTienenEstado()) {
-            errorMessage.setValue("Debe seleccionar un estado para todos los ítems");
-            return;
-        }
-
-        // Validar que haya firma
-        if (!tieneFirma()) {
-            errorMessage.setValue("Se requiere la firma del operario");
+            callback.onAuditoriaGuardada(false);
             return;
         }
 
         // Obtener el token
         String token = "Bearer " + ApiClient.leerToken(application);
-        Log.d("FirmaPatron", "Token: " + token);
-        Log.d("FirmaPatron", "ID Operario: " + operario.getValue().getIdOperario());
+        Log.d(TAG, "Token obtenido: " + (token != null ? "Sí" : "No"));
 
-        // Primero verificar si el operario ya tiene una firma patrón
-        Call<FirmaPatron> firmaPatronCall = ApiClient.getEndPoints().obtenerFirmaPatron(token, operario.getValue().getIdOperario());
-        firmaPatronCall.enqueue(new Callback<FirmaPatron>() {
-            @Override
-            public void onResponse(Call<FirmaPatron> call, Response<FirmaPatron> response) {
-                Log.d("FirmaPatron", "Código de respuesta: " + response.code());
-                if (response.isSuccessful() && response.body() != null) {
-                    Log.d("FirmaPatron", "Firma patrón encontrada");
-                    // Ya tiene firma patrón, verificar la firma actual
-                    verificarFirmaYGuardarAuditoria(token);
-                } else if (response.code() == 404) {
-                    Log.d("FirmaPatron", "No se encontró firma patrón, creando nueva");
-                    // No tiene firma patrón, guardar la firma actual como patrón
-                    guardarFirmaPatronYContinuar(token);
-                } else {
-                    try {
-                        String errorBody = response.errorBody() != null ? response.errorBody().string() : "Error desconocido";
-                        Log.e("FirmaPatron", "Error al obtener firma patrón: " + errorBody);
-                        Log.e("FirmaPatron", "URL llamada: " + call.request().url());
-                        errorMessage.setValue("Error al obtener firma patrón: " + errorBody);
-                    } catch (IOException e) {
-                        Log.e("FirmaPatron", "Error al leer error body", e);
-                        errorMessage.setValue("Error al obtener firma patrón");
-                    }
-                }
-            }
-
-            @Override
-            public void onFailure(Call<FirmaPatron> call, Throwable t) {
-                Log.e("FirmaPatron", "Error de conexión al obtener firma patrón: " + t.getMessage(), t);
-                Log.e("FirmaPatron", "URL llamada: " + call.request().url());
-                errorMessage.setValue("Error de conexión al obtener firma patrón: " + t.getMessage());
-            }
-        });
-    }
-
-    private void guardarFirmaPatronYContinuar(String token) {
-        // Crear objeto firma patrón
-        FirmaPatron firmaPatron = new FirmaPatron();
-        firmaPatron.setIdOperario(operario.getValue().getIdOperario());
-        firmaPatron.setFirma(firma.getValue());
-        
-        // Calcular métricas de la firma SVG
-        List<PointF> points = extraerPuntosDelSVG(firma.getValue());
-        firmaPatron.setPuntosTotales(points.size());
-        firmaPatron.setVelocidadMedia(calcularVelocidadMedia(points));
-        firmaPatron.setPresionMedia(1.0f); // Por defecto en firmas vectoriales
-        firmaPatron.setHash(generarHash(firma.getValue()));
-        
-        // Formatear la fecha en ISO 8601
-        SimpleDateFormat iso8601Format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
-        iso8601Format.setTimeZone(TimeZone.getTimeZone("UTC"));
-        firmaPatron.setFechaCreacion(iso8601Format.format(new Date()));
-        
-        firmaPatron.setActiva(true);
-
-        // Guardar firma patrón
-        Call<ResponseBody> call = ApiClient.getEndPoints().guardarFirmaPatron(token, firmaPatron);
-        call.enqueue(new Callback<ResponseBody>() {
-            @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                if (response.isSuccessful()) {
-                    Log.d("FirmaPatron", "Firma patrón guardada exitosamente");
-                    // Firma patrón guardada, continuar con la auditoría
-                    procederConGuardadoAuditoria(token);
-                } else {
-                    try {
-                        String errorBody = response.errorBody() != null ? response.errorBody().string() : "Error desconocido";
-                        Log.e("FirmaPatron", "Error al guardar firma patrón: " + errorBody);
-                        errorMessage.setValue("Error al guardar firma patrón: " + errorBody);
-                    } catch (IOException e) {
-                        Log.e("FirmaPatron", "Error al leer error body", e);
-                        errorMessage.setValue("Error al guardar firma patrón");
-                    }
-                }
-            }
-
-            @Override
-            public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Log.e("FirmaPatron", "Error de conexión al guardar firma patrón: " + t.getMessage(), t);
-                errorMessage.setValue("Error de conexión al guardar firma patrón: " + t.getMessage());
-            }
-        });
-    }
-
-    private void verificarFirmaYGuardarAuditoria(String token) {
-        // Crear objeto firma para verificar
-        FirmaPatron firmaVerificar = new FirmaPatron();
-        firmaVerificar.setIdOperario(operario.getValue().getIdOperario());
-        firmaVerificar.setFirma(firma.getValue());
-        
-        // Calcular métricas de la firma SVG
-        List<PointF> points = extraerPuntosDelSVG(firma.getValue());
-        firmaVerificar.setPuntosTotales(points.size());
-        firmaVerificar.setVelocidadMedia(calcularVelocidadMedia(points));
-        firmaVerificar.setPresionMedia(1.0f); // Por defecto en firmas vectoriales
-        firmaVerificar.setHash(generarHash(firma.getValue()));
-
-        // Verificar firma
-        Call<Boolean> call = ApiClient.getEndPoints().verificarFirma(token, firmaVerificar);
-        call.enqueue(new Callback<Boolean>() {
-            @Override
-            public void onResponse(Call<Boolean> call, Response<Boolean> response) {
-                if (response.isSuccessful() && response.body() != null && response.body()) {
-                    // Firma verificada, proceder con la auditoría
-                    procederConGuardadoAuditoria(token);
-                } else {
-                    errorMessage.setValue("La firma no coincide con el patrón del operario");
-                }
-            }
-
-            @Override
-            public void onFailure(Call<Boolean> call, Throwable t) {
-                Log.e(TAG, "Error de conexión al verificar firma", t);
-                errorMessage.setValue("Error de conexión al verificar firma: " + t.getMessage());
-            }
-        });
-    }
-
-    private List<PointF> extraerPuntosDelSVG(String svgPath) {
-        List<PointF> points = new ArrayList<>();
-        Pattern pattern = Pattern.compile("[MmLlHhVvCcSsQqTtAaZz]|[-+]?[0-9]*\\.?[0-9]+");
-        Matcher matcher = pattern.matcher(svgPath);
-        
-        char comando = 'M';
-        float x = 0, y = 0;
-        
-        while (matcher.find()) {
-            String token = matcher.group();
-            
-            if (token.matches("[MmLlHhVvCcSsQqTtAaZz]")) {
-                comando = token.charAt(0);
-            } else {
-                float valor = Float.parseFloat(token);
-                
-                switch (comando) {
-                    case 'M':
-                    case 'm':
-                        if (matcher.find()) {
-                            float y1 = Float.parseFloat(matcher.group());
-                            x = comando == 'M' ? valor : x + valor;
-                            y = comando == 'M' ? y1 : y + y1;
-                            points.add(new PointF(x, y));
-                        }
-                        break;
-                    case 'L':
-                    case 'l':
-                        if (matcher.find()) {
-                            float y1 = Float.parseFloat(matcher.group());
-                            x = comando == 'L' ? valor : x + valor;
-                            y = comando == 'L' ? y1 : y + y1;
-                            points.add(new PointF(x, y));
-                        }
-                        break;
-                    case 'H':
-                    case 'h':
-                        x = comando == 'H' ? valor : x + valor;
-                        points.add(new PointF(x, y));
-                        break;
-                    case 'V':
-                    case 'v':
-                        y = comando == 'V' ? valor : y + valor;
-                        points.add(new PointF(x, y));
-                        break;
-                }
-            }
-        }
-        
-        return points;
-    }
-
-    private float calcularVelocidadMedia(List<PointF> points) {
-        if (points.size() < 2) return 0;
-        
-        float distanciaTotal = 0;
-        
-        for (int i = 1; i < points.size(); i++) {
-            PointF p1 = points.get(i-1);
-            PointF p2 = points.get(i);
-            
-            float dx = p2.x - p1.x;
-            float dy = p2.y - p1.y;
-            distanciaTotal += (float)Math.sqrt(dx*dx + dy*dy);
-        }
-        
-        // Asumimos una velocidad constante, así que la velocidad media será
-        // la distancia total dividida por el número de segmentos
-        return distanciaTotal / (points.size() - 1);
-    }
-
-    private String generarHash(String firma) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(firma.getBytes(StandardCharsets.UTF_8));
-            return android.util.Base64.encodeToString(hash, android.util.Base64.DEFAULT);
-        } catch (NoSuchAlgorithmException e) {
-            Log.e(TAG, "Error al generar hash", e);
-            return "";
-        }
-    }
-
-    private void procederConGuardadoAuditoria(String token) {
-        // Obtener el ID del supervisor de SharedPreferences
+        // Obtener el ID del supervisor
         SharedPreferences sharedPreferences = application.getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
         int idSupervisor = sharedPreferences.getInt("idSupervisor", 0);
+        Log.d(TAG, "ID Supervisor: " + idSupervisor);
 
-        // Convertir los ítems seleccionados al formato requerido por la API
+        // Crear la lista de items
         List<ItemAuditoriaRequest> items = new ArrayList<>();
-        List<AuditoriaItemBPM> itemsSeleccionados = mListaItemsSeleccionados.getValue();
-        if (itemsSeleccionados != null) {
-            for (AuditoriaItemBPM item : itemsSeleccionados) {
-                items.add(new ItemAuditoriaRequest(item.getIdItemBPM(), item.getEstado().toString()));
-            }
+        for (AuditoriaItemBPM item : itemsSeleccionados) {
+            items.add(new ItemAuditoriaRequest(item.getIdItemBPM(), item.getEstado().toString()));
         }
 
-        // Obtener el valor de noConforme
-        Boolean noConformeValue = noConforme.getValue();
-        boolean isNoConforme = noConformeValue != null && noConformeValue;
+        // Verificar que el operario existe
+        if (operario.getValue() == null) {
+            Log.e(TAG, "Error: Operario es nulo");
+            errorMessage.setValue("No hay operario seleccionado");
+            callback.onAuditoriaGuardada(false);
+            return;
+        }
+
+        // Log de datos antes de crear la auditoría
+        Log.d(TAG, "Datos de la auditoría a enviar:");
+        Log.d(TAG, "ID Operario: " + operario.getValue().getIdOperario());
+        Log.d(TAG, "ID Supervisor: " + idSupervisor);
+        Log.d(TAG, "ID Actividad: " + operario.getValue().getIdActividad());
+        Log.d(TAG, "ID Línea: " + operario.getValue().getIdLinea());
+        Log.d(TAG, "Comentario: " + (comentario.getValue() != null ? comentario.getValue() : ""));
+        Log.d(TAG, "Cantidad de items: " + items.size());
+        Log.d(TAG, "Firma length: " + (firma.getValue() != null ? firma.getValue().length() : 0));
+        Log.d(TAG, "No Conforme: " + isNoConforme);
 
         // Crear el objeto AltaAuditoriaRequest
         AltaAuditoriaRequest auditoria = new AltaAuditoriaRequest(
@@ -419,40 +227,62 @@ public class AuditoriaViewModel extends AndroidViewModel {
             operario.getValue().getIdLinea(),
             comentario.getValue() != null ? comentario.getValue() : "",
             items,
-            firma.getValue(),  // Incluir la firma al crear la auditoría
+            firma.getValue(),
             isNoConforme
         );
 
-        // Llamar a la API para guardar la auditoría
-        Call<ResponseBody> call = ApiClient.getEndPoints().darDeAltaAuditoria(token, auditoria);
+        // Llamar a la API
+        Call<ResponseBody> call = ApiClient.getEndPoints().altaAuditoriaCompleta(token, auditoria);
+        Log.d(TAG, "Llamando a API altaAuditoriaCompleta");
+        Log.d(TAG, "URL de la llamada: " + call.request().url());
+        
         call.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                Log.d(TAG, "Respuesta recibida de la API");
+                Log.d(TAG, "Código de respuesta: " + response.code());
+                
                 if (response.isSuccessful()) {
                     try {
-                        // Obtener el JSON de la respuesta
                         String responseBody = response.body().string();
+                        Log.d(TAG, "Respuesta exitosa del servidor: " + responseBody);
                         
-                        // Parsear el JSON para obtener el ID de la auditoría
                         JSONObject jsonResponse = new JSONObject(responseBody);
                         JSONObject auditoriaJson = jsonResponse.getJSONObject("auditoria");
                         int idAuditoria = auditoriaJson.getInt("idAuditoria");
                         
                         Log.d(TAG, "Auditoría guardada correctamente con ID: " + idAuditoria);
-                        mAuditoriaGuardada.setValue(true);
-                        limpiarDatos();
-                    } catch (JSONException e) {
-                        Log.e(TAG, "Error al parsear respuesta JSON", e);
-                        errorMessage.setValue("Error al procesar la respuesta del servidor");
+                        
+                        // Limpiar datos
+                        operario.postValue(null);
+                        firma.postValue("");
+                        comentario.postValue("");
+                        mListaItemsSeleccionados.postValue(new ArrayList<>());
+                        isNoConforme = false;
+                        
+                        // Notificar éxito
+                        callback.onAuditoriaGuardada(true);
+                        
+                    } catch (JSONException | IOException e) {
+                        Log.e(TAG, "Error al procesar respuesta JSON", e);
+                        Log.e(TAG, "Stack trace: ", e);
+                        errorMessage.postValue("Error al procesar la respuesta del servidor");
+                        callback.onAuditoriaGuardada(false);
                     }
                 } else {
                     try {
                         String errorBody = response.errorBody() != null ? response.errorBody().string() : "Error desconocido";
-                        Log.e(TAG, "Error al guardar auditoría: " + errorBody);
-                        errorMessage.setValue("Error al guardar auditoría: " + errorBody);
+                        Log.e(TAG, "Error al guardar auditoría. Código: " + response.code());
+                        Log.e(TAG, "Error body: " + errorBody);
+                        Log.e(TAG, "Headers de la respuesta: " + response.headers());
+                        Log.e(TAG, "URL llamada: " + call.request().url());
+                        errorMessage.postValue("Error al guardar auditoría: " + errorBody);
+                        callback.onAuditoriaGuardada(false);
                     } catch (IOException e) {
                         Log.e(TAG, "Error al leer error body", e);
-                        errorMessage.setValue("Error al guardar auditoría");
+                        Log.e(TAG, "Stack trace: ", e);
+                        errorMessage.postValue("Error al guardar auditoría");
+                        callback.onAuditoriaGuardada(false);
                     }
                 }
             }
@@ -460,15 +290,18 @@ public class AuditoriaViewModel extends AndroidViewModel {
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 Log.e(TAG, "Error de conexión al guardar auditoría", t);
-                errorMessage.setValue("Error de conexión al guardar auditoría: " + t.getMessage());
+                Log.e(TAG, "URL llamada: " + call.request().url());
+                Log.e(TAG, "Stack trace: ", t);
+                errorMessage.postValue("Error de conexión al guardar auditoría: " + t.getMessage());
+                callback.onAuditoriaGuardada(false);
             }
         });
     }
 
-    public void setFirma(String firmaSvg, boolean noConformeValue) {
+    public void setFirma(String firmaSvg, boolean noConforme) {
+        Log.d(TAG, "setFirma - noConforme: " + noConforme);
         firma.setValue(firmaSvg);
-        noConforme.setValue(noConformeValue);
-        Log.d(TAG, "Firma guardada. noConforme: " + noConformeValue);
+        isNoConforme = noConforme;
     }
 
     public LiveData<Boolean> getNoConforme() {
@@ -480,11 +313,13 @@ public class AuditoriaViewModel extends AndroidViewModel {
     }
 
     private void limpiarDatos() {
-        firma.setValue(null);
-        noConforme.setValue(null);
-        mListaItemsSeleccionados.setValue(new ArrayList<>());
+        Log.d(TAG, "Limpiando datos después de guardar");
+        operario.setValue(null);
+        firma.setValue("");
         comentario.setValue("");
-        limpiarDatosOperario();
+        mListaItemsSeleccionados.setValue(new ArrayList<>());
+        isNoConforme = false;
+        // No reseteamos mAuditoriaGuardada aquí, lo haremos después de que el diálogo se cierre
     }
 
     public void cargarOperario(int legajo) {

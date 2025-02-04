@@ -82,9 +82,9 @@ public class AuditoriaFragment extends Fragment {
         });
 
         auditoriaViewModel.getMAuditoriaGuardada().observe(getViewLifecycleOwner(), isGuardada -> {
-            if (isGuardada != null && isGuardada) {  // Solo muestra el Toast si es verdadero
+            if (isGuardada != null && isGuardada) {
                 Toast.makeText(getContext(), "Auditoría guardada con éxito", Toast.LENGTH_SHORT).show();
-                auditoriaViewModel.setMAuditoriaGuardada(false);  // Reseteamos el valor a false después de mostrar el Toast
+                auditoriaViewModel.setMAuditoriaGuardada(false);
             }
         });
 

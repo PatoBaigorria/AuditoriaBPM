@@ -2,6 +2,9 @@ package baigorriap.auditoriabpm.ui.auditoria;
 
 import android.app.Dialog;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -88,6 +91,8 @@ public class FirmaDialogFragment extends DialogFragment {
     }
 
     private void guardarFirma() {
+        Log.d("FirmaDialog", "Iniciando guardarFirma()");
+        
         // Obtener el SVG de la firma
         String firmaSvg = binding.signaturePad.getSignatureSvg();
         if (firmaSvg == null || firmaSvg.isEmpty()) {
@@ -101,27 +106,48 @@ public class FirmaDialogFragment extends DialogFragment {
         }
 
         boolean noConforme = binding.checkBoxNoConforme.isChecked();
+        Log.d("FirmaDialog", "noConforme: " + noConforme);
         
         // Guardar la firma en el ViewModel
         auditoriaViewModel.setFirma(firmaSvg, noConforme);
         
-        // Guardar la auditoría
-        auditoriaViewModel.guardarAuditoria();
+        // Deshabilitar el botón para evitar múltiples clicks
+        binding.btnGuardar.setEnabled(false);
+        Log.d("FirmaDialog", "Botón guardar deshabilitado");
         
-        // Observar si la auditoría se guardó exitosamente
-        auditoriaViewModel.getMAuditoriaGuardada().observe(getViewLifecycleOwner(), guardadaExitosamente -> {
-            if (guardadaExitosamente != null && guardadaExitosamente) {
-                // Notificar al HomeFragment que necesita resetear
-                Bundle result = new Bundle();
-                result.putBoolean("reset", true);
-                getParentFragmentManager().setFragmentResult("needsReset", result);
-                
-                // Cerrar el diálogo
-                dismiss();
-                
-                // Navegar al fragmento de operario
-                NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
-                navController.navigate(R.id.action_auditoriaFragment_to_homeFragment);
+        // Guardar la auditoría usando el callback
+        auditoriaViewModel.guardarAuditoria(new AuditoriaViewModel.GuardarAuditoriaCallback() {
+            @Override
+            public void onAuditoriaGuardada(boolean exitoso) {
+                if (exitoso) {
+                    Log.d("FirmaDialog", "Auditoría guardada exitosamente, preparando para cerrar diálogo");
+                    
+                    // Mostrar el toast de éxito
+                    Toast.makeText(requireContext(), "Auditoría guardada con éxito", Toast.LENGTH_SHORT).show();
+                    
+                    // Esperar un momento para que se muestre el toast
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        try {
+                            if (isAdded() && !isRemoving()) {
+                                Log.d("FirmaDialog", "Intentando cerrar el diálogo");
+                                dismiss();
+                                Log.d("FirmaDialog", "Diálogo cerrado exitosamente");
+                                
+                                // Navegar al fragmento principal
+                                NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
+                                navController.navigate(R.id.action_auditoriaFragment_to_homeFragment);
+                                Log.d("FirmaDialog", "Navegación completada");
+                            } else {
+                                Log.e("FirmaDialog", "No se puede cerrar el diálogo: Fragment no está agregado o está siendo removido");
+                            }
+                        } catch (Exception e) {
+                            Log.e("FirmaDialog", "Error al cerrar diálogo o navegar", e);
+                        }
+                    }, 1000); // Esperar 1 segundo
+                } else {
+                    Log.d("FirmaDialog", "Error al guardar auditoría, re-habilitando botón");
+                    binding.btnGuardar.setEnabled(true);
+                }
             }
         });
     }
@@ -141,6 +167,9 @@ public class FirmaDialogFragment extends DialogFragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        binding = null;
+        Log.d("FirmaDialog", "onDestroyView llamado");
+        if (binding != null) {
+            binding = null;
+        }
     }
 }

@@ -84,10 +84,24 @@ public class HomeFragment extends Fragment {
             if (operario != null) {
                 tvNombreOp.setText(operario.getNombreCompleto());
                 idOperario = operario.getIdOperario();
+                binding.etLegajo.setError(null);
             } else {
                 tvNombreOp.setText("");
+                // Si el campo de legajo no está vacío y tiene 6 dígitos, mostrar error
+                String legajoInput = binding.etLegajo.getText().toString().trim();
+                if (!legajoInput.isEmpty() && legajoInput.length() == 6) {
+                    binding.etLegajo.setError("No se encontró ningún operario con este legajo");
+                }
                 // Limpiar spinners cuando no hay operario
                 vm.limpiarSpinnersConHint();
+            }
+        });
+
+        // Observar mensajes de error
+        vm.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
+            if (error != null && !error.isEmpty()) {
+                Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
+                binding.etLegajo.setError(error);
             }
         });
 
@@ -102,16 +116,39 @@ public class HomeFragment extends Fragment {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (s.length() == 0 || s.length() <= 5) {
+                String input = s.toString().trim();
+                
+                // Limpiar datos si el campo está vacío o si el legajo no tiene 6 dígitos
+                if (input.isEmpty() || input.length() != 6) {
                     tvNombreOp.setText("");
                     vm.limpiarSpinnersConHint();
                     if (actividadAdapter != null) {
                         actividadAdapter.clear();
+                        actividadAdapter.add(new Actividad(-1, "Actividad"));
                         actividadAdapter.notifyDataSetChanged();
                     }
                     if (lineaAdapter != null) {
                         lineaAdapter.clear();
+                        lineaAdapter.add(new Linea(-1, "Línea"));
                         lineaAdapter.notifyDataSetChanged();
+                    }
+                    
+                    // Mostrar mensaje de ayuda si el usuario está escribiendo
+                    if (!input.isEmpty() && input.length() < 6) {
+                        binding.etLegajo.setError("El legajo debe tener 6 dígitos");
+                    } else {
+                        binding.etLegajo.setError(null);
+                    }
+                } else {
+                    try {
+                        int legajo = Integer.parseInt(input);
+                        if (legajo <= 0) {
+                            binding.etLegajo.setError("El legajo debe ser un número positivo");
+                        } else {
+                            binding.etLegajo.setError(null);
+                        }
+                    } catch (NumberFormatException e) {
+                        binding.etLegajo.setError("El legajo debe ser un número válido");
                     }
                 }
             }
@@ -127,6 +164,16 @@ public class HomeFragment extends Fragment {
             if (!legajoInput.isEmpty()) {
                 try {
                     int legajo = Integer.parseInt(legajoInput);
+                    // Validar que el legajo tenga 6 dígitos
+                    if (legajoInput.length() != 6) {
+                        Toast.makeText(getContext(), "El legajo debe tener 6 dígitos", Toast.LENGTH_SHORT).show();
+                        return true;
+                    }
+                    // Validar que el legajo sea mayor que 0
+                    if (legajo <= 0) {
+                        Toast.makeText(getContext(), "El legajo debe ser un número positivo", Toast.LENGTH_SHORT).show();
+                        return true;
+                    }
                     vm.cargarOperarioPorLegajo(legajo);
                     vm.cargarDatosPorLegajo(legajo);
                     vm.cargarSupervisorPorId(idSupervisor);

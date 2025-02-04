@@ -4,135 +4,138 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:padding="16dp"
     tools:context=".ui.auditoria.HomeFragment">
-
-    <TextView
-        android:id="@+id/tvLeyendaLin"
-        android:layout_width="340dp"
-        android:layout_height="39dp"
-        android:layout_marginStart="128dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="128dp"
-        android:text="Si desea cambiar la Línea, seleccione un ítem de la lista"
-        android:textAlignment="center"
-        android:textSize="13dp"
-        android:textColor="@android:color/black"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.621"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/spnLinea" />
 
     <TextView
         android:id="@+id/text_home"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="62dp"
+        android:layout_marginTop="32dp"
         android:text="Datos del Operario"
         android:textAlignment="center"
-        android:textSize="20sp"
+        android:textSize="24sp"
+        android:textStyle="bold"
         android:textColor="@android:color/black"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <EditText
-        android:id="@+id/etLegajo"
-        android:layout_width="389dp"
-        android:layout_height="62dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="60dp"
-        android:layout_marginEnd="8dp"
-        android:background="@drawable/borde_rectangulo"
-        android:ems="6"
-        android:focusable="true"
-        android:focusableInTouchMode="true"
-        android:gravity="center"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilLegajo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
         android:hint="Legajo"
-        android:inputType="number"
-        android:maxLength="6"
-        android:textColorHint="@android:color/darker_gray"
-        android:textSize="20dp"
+        app:errorEnabled="true"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.42"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/text_home" />
+        app:layout_constraintTop_toBottomOf="@+id/text_home">
 
-    <Spinner
-        android:id="@+id/spnActividad"
-        android:layout_width="385dp"
-        android:layout_height="59dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="38dp"
-        android:layout_marginEnd="8dp"
-        android:background="@drawable/rectangulo_3d"
-        android:textAlignment="center"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.423"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvNombreOp" />
-
-    <Spinner
-        android:id="@+id/spnLinea"
-        android:layout_width="385dp"
-        android:layout_height="59dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="28dp"
-        android:layout_marginEnd="8dp"
-        android:background="@drawable/rectangulo_3d"
-        android:textAlignment="center"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.42"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvLeyendaAct" />
-
-    <Button
-        android:id="@+id/btSiguiente"
-        android:layout_width="144dp"
-        android:layout_height="53dp"
-        android:layout_marginStart="269dp"
-        android:layout_marginTop="138dp"
-        android:layout_marginEnd="34dp"
-        android:layout_marginBottom="45dp"
-        android:text="Siguiente"
-        android:textAlignment="center"
-        android:textSize="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvLeyendaLin" />
-
-    <TextView
-        android:id="@+id/tvLeyendaAct"
-        android:layout_width="359dp"
-        android:layout_height="36dp"
-        android:layout_marginStart="128dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="128dp"
-        android:text="Si desea cambiar la Actividad, seleccione un ítem de la lista"
-        android:textAlignment="center"
-        android:textSize="13dp"
-        android:textColor="@android:color/black"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.549"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/spnActividad" />
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etLegajo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:maxLength="6"
+            android:textSize="18sp"
+            android:gravity="center"/>
+    </com.google.android.material.textfield.TextInputLayout>
 
     <TextView
         android:id="@+id/tvNombreOp"
-        android:layout_width="389dp"
-        android:layout_height="59dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="52dp"
-        android:layout_marginEnd="8dp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/borde_rectangulo"
         android:gravity="center"
         android:hint="Nombre"
-        android:inputType="text"
+        android:minHeight="48dp"
+        android:padding="12dp"
         android:textColorHint="@android:color/darker_gray"
-        android:textSize="20dp"
-        android:background="@drawable/borde_rectangulo"
+        android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.42"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/etLegajo" />
+        app:layout_constraintTop_toBottomOf="@+id/tilLegajo" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilActividad"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:hint="Actividad"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvNombreOp">
+
+        <Spinner
+            android:id="@+id/spnActividad"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:paddingVertical="12dp"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <TextView
+        android:id="@+id/tvLeyendaAct"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Si desea cambiar la Actividad, seleccione un ítem de la lista"
+        android:textAlignment="center"
+        android:textSize="12sp"
+        android:textColor="@android:color/darker_gray"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tilActividad" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilLinea"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:hint="Línea"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvLeyendaAct">
+
+        <Spinner
+            android:id="@+id/spnLinea"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:paddingVertical="12dp"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <TextView
+        android:id="@+id/tvLeyendaLin"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Si desea cambiar la Línea, seleccione un ítem de la lista"
+        android:textAlignment="center"
+        android:textSize="12sp"
+        android:textColor="@android:color/darker_gray"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tilLinea" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btSiguiente"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:layout_marginBottom="16dp"
+        android:minWidth="150dp"
+        android:padding="12dp"
+        android:text="Siguiente"
+        android:textSize="16sp"
+        app:cornerRadius="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvLeyendaLin"
+        app:layout_constraintVertical_bias="0.0" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
