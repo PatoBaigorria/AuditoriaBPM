@@ -28,5 +28,12 @@
         <item name="android:windowBackground">@color/white</item>
     </style>
 
+    <style name="Theme.AuditoriaBPM.Splash" parent="Theme.AuditoriaBPM">
+        <item name="android:windowBackground">@color/white</item>
+        <item name="android:windowDisablePreview">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+
     <style name="Base.Theme.AuditoriaBPM.PopupOverlay" parent="ThemeOverlay.MaterialComponents.Light" />
 </resources>
