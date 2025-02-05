@@ -21,5 +21,12 @@
 
     <style name="Theme.AuditoriaBPM" parent="Base.Theme.AuditoriaBPM" />
 
+    <style name="Theme.AuditoriaBPM.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowBackground">@color/white</item>
+    </style>
+
     <style name="Base.Theme.AuditoriaBPM.PopupOverlay" parent="ThemeOverlay.MaterialComponents.Light" />
 </resources>

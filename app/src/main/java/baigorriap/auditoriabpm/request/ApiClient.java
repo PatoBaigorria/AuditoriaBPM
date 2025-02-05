@@ -100,7 +100,7 @@ public class ApiClient {
         @GET("Auditorias/auditorias-operario")
         Call<List<OperarioSinAuditoria>> obtenerOperariosSinAuditorias(@Header("Authorization") String token);
 
-        @GET("Auditorias/estadisticas")
+        @GET("Auditorias/cantidad-auditorias-mes-a-mes")
         Call<Map<String, EstadisticasAuditoria>> obtenerEstadisticasAuditoria(
                 @Header("Authorization") String token, 
                 @Query("anioInicio") int anioInicio,

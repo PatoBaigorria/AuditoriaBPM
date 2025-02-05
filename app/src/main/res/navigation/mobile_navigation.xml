@@ -17,9 +17,18 @@
 
     <fragment
         android:id="@+id/nav_gallery"
-        android:name="baigorriap.auditoriabpm.ui.reporte.ReporteFragment"
+        android:name="baigorriap.auditoriabpm.ui.reportes.ReportesMenuFragment"
         android:label="Reportes"
-        tools:layout="@layout/fragment_reporte">
+        tools:layout="@layout/fragment_reportes_menu">
+        <action
+            android:id="@+id/action_nav_gallery_to_nav_operarios_sin_auditoria"
+            app:destination="@id/nav_operarios_sin_auditoria" />
+        <action
+            android:id="@+id/action_nav_gallery_to_nav_estadisticas"
+            app:destination="@id/nav_estadisticas" />
+        <action
+            android:id="@+id/action_nav_gallery_to_nav_items_nook"
+            app:destination="@id/nav_items_nook" />
         <action
             android:id="@+id/action_nav_gallery_to_nav_home"
             app:destination="@id/nav_home"

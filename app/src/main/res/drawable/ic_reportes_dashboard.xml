@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    
+    <!-- Marco principal -->
+    <path
+        android:fillColor="#757575"
+        android:pathData="M3,3v18h18V3H3zM20,20H4V4h16V20z"/>
+    
+    <!-- Cuadro superior izquierdo con mini gráfico -->
+    <path
+        android:fillColor="#757575"
+        android:pathData="M6,6h5v5H6V6zM7,7v3h3V7H7z"/>
+    
+    <!-- Mini gráfico dentro del cuadro superior izquierdo -->
+    <path
+        android:fillColor="#757575"
+        android:pathData="M7.5,9.5v-1h0.5v1H7.5zM8.5,8.5v-1h0.5v1H8.5zM9.5,9v-1.5h0.5v1.5H9.5z"/>
+    
+    <!-- Cuadro superior derecho con líneas -->
+    <path
+        android:fillColor="#757575"
+        android:pathData="M13,6h5v5h-5V6zM14,7v0.5h3V7H14zM14,8.5v0.5h3V8.5H14zM14,10v0.5h3V10H14z"/>
+    
+    <!-- Cuadro inferior con datos -->
+    <path
+        android:fillColor="#757575"
+        android:pathData="M6,13h12v5H6V13zM7,14v0.5h10V14H7zM7,15.5v0.5h10v-0.5H7zM7,17v0.5h10V17H7z"/>
+    
+    <!-- Flecha indicadora -->
+    <path
+        android:fillColor="#757575"
+        android:pathData="M21,8l-1.5,-1.5l1.5,-1.5l1.5,1.5z"/>
+</vector>
