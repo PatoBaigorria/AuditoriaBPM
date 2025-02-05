@@ -58,25 +58,7 @@ public class ItemsNoOkFragment extends Fragment {
         input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         builder.setView(input);
 
-        builder.setPositiveButton("Buscar", (dialog, which) -> {
-            String legajoStr = input.getText().toString();
-            if (!legajoStr.isEmpty()) {
-                try {
-                    int legajo = Integer.parseInt(legajoStr);
-                    Log.d(TAG, "Legajo ingresado: " + legajo);
-                    binding.progressBar.setVisibility(View.VISIBLE);
-                    viewModel.loadItemsNoOk(legajo, requireContext());
-                } catch (NumberFormatException e) {
-                    Log.e(TAG, "Error al parsear legajo: " + legajoStr, e);
-                    Toast.makeText(requireContext(), "Por favor ingrese un número válido", Toast.LENGTH_SHORT).show();
-                    mostrarDialogoLegajo(); // Mostrar el diálogo de nuevo si el número no es válido
-                }
-            } else {
-                Log.w(TAG, "Legajo vacío");
-                Toast.makeText(requireContext(), "Por favor ingrese el legajo", Toast.LENGTH_SHORT).show();
-                mostrarDialogoLegajo(); // Mostrar el diálogo de nuevo si está vacío
-            }
-        });
+        builder.setPositiveButton("Buscar", null); // Se configura después para evitar que se cierre automáticamente
 
         builder.setNegativeButton("Cancelar", (dialog, which) -> {
             Log.d(TAG, "Diálogo cancelado, volviendo atrás");
@@ -85,7 +67,28 @@ public class ItemsNoOkFragment extends Fragment {
             navController.popBackStack();
         });
 
-        builder.show();
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        // Configurar el botón después de mostrar el diálogo para evitar que se cierre automáticamente
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+            String legajoStr = input.getText().toString();
+            if (!legajoStr.isEmpty()) {
+                try {
+                    int legajo = Integer.parseInt(legajoStr);
+                    Log.d(TAG, "Legajo ingresado: " + legajo);
+                    binding.progressBar.setVisibility(View.VISIBLE);
+                    viewModel.loadItemsNoOk(legajo, requireContext());
+                    dialog.dismiss(); // Solo cerrar si el legajo es válido
+                } catch (NumberFormatException e) {
+                    Log.e(TAG, "Error al parsear legajo: " + legajoStr, e);
+                    Toast.makeText(requireContext(), "Por favor ingrese un número válido", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                Log.w(TAG, "Legajo vacío");
+                Toast.makeText(requireContext(), "Por favor ingrese el legajo", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void setupRecyclerView() {
@@ -103,11 +106,13 @@ public class ItemsNoOkFragment extends Fragment {
             }
         });
 
-        viewModel.getError().observe(getViewLifecycleOwner(), error -> {
-            if (error != null && !error.isEmpty()) {
-                Log.e(TAG, "Error recibido: " + error);
-                Toast.makeText(getContext(), error, Toast.LENGTH_LONG).show();
+        viewModel.getError().observe(getViewLifecycleOwner(), errorMsg -> {
+            if (errorMsg != null) {
+                Log.e(TAG, "Error observado: " + errorMsg);
                 binding.progressBar.setVisibility(View.GONE);
+                Toast.makeText(requireContext(), errorMsg, Toast.LENGTH_SHORT).show();
+                // Si hay un error, mostrar el diálogo nuevamente
+                mostrarDialogoLegajo();
             }
         });
     }

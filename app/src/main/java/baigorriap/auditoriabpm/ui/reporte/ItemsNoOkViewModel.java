@@ -69,12 +69,13 @@ public class ItemsNoOkViewModel extends ViewModel {
                     try {
                         String errorBody = response.errorBody() != null ? 
                             response.errorBody().string() : "Error desconocido";
-                        String msg = "Error " + response.code() + ": " + errorBody;
+                        // Si es error 404, solo mostrar el mensaje sin el código
+                        String msg = response.code() == 404 ? errorBody : "Error " + response.code() + ": " + errorBody;
                         Log.e(TAG, msg);
                         Log.e(TAG, "URL llamada: " + call.request().url());
                         error.setValue(msg);
                     } catch (IOException e) {
-                        String msg = "Error " + response.code() + " al cargar los items NO OK";
+                        String msg = "Error al cargar los items NO OK";
                         Log.e(TAG, msg, e);
                         error.setValue(msg);
                     }
