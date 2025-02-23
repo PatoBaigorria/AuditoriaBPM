@@ -694,32 +694,32 @@
 
             <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:orientation="vertical"
-                android:gravity="center"
-                android:layout_marginEnd="48dp">
+                android:gravity="center_horizontal"
+                android:layout_marginEnd="64dp">
 
                 <ImageButton
                     android:id="@+id/imgBtnCancelar"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/button_hover_background"
-                    android:src="@drawable/ic_cancel"/>
+                    android:src="@drawable/ic_cancelar"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Cancelar"
-                    android:textSize="11sp"
+                    android:textSize="13sp"
                     android:textStyle="bold"
                     android:layout_marginTop="8dp"/>
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:orientation="vertical"
-                android:gravity="center"
+                android:gravity="center_horizontal"
                 android:layout_marginEnd="48dp">
 
                 <ImageButton
@@ -727,36 +727,40 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/button_hover_background"
-                    android:src="@drawable/ic_coment"/>
+                    android:src="@drawable/ic_comentarios"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Comentarios"
-                    android:textSize="11sp"
+                    android:textSize="13sp"
                     android:textStyle="bold"
                     android:layout_marginTop="8dp"/>
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:orientation="vertical"
-                android:gravity="center">
+                android:gravity="center"
+                android:layout_marginStart="20dp">
 
-                <com.google.android.material.button.MaterialButton
+                <ImageButton
                     android:id="@+id/imgBtnFirma"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:padding="4dp"
+                    android:scaleType="fitCenter"
+                    android:background="@drawable/button_hover_background"
+                    android:src="@drawable/ic_firma"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:text="Firma"
-                    android:textAllCaps="false"
-                    android:textSize="11sp"
+                    android:textSize="13sp"
                     android:textStyle="bold"
-                    app:icon="@drawable/ic_firma2"
-                    app:iconSize="24dp"
-                    app:iconGravity="top"
-                    app:iconPadding="8dp"
-                    style="@style/Widget.MaterialComponents.Button"/>
+                    android:layout_marginTop="8dp"/>
             </LinearLayout>
         </LinearLayout>
     </androidx.cardview.widget.CardView>

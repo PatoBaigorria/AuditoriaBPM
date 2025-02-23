@@ -11,7 +11,7 @@
         android:layout_width="wrap_content"
         android:layout_height="185dp"
         android:layout_marginTop="70dp"
-        android:src="@drawable/ic_logo_bpm" />
+        android:src="@drawable/ic_logocalidad" />
 
     <!-- Campo de entrada de legajo -->
     <com.google.android.material.textfield.TextInputLayout
