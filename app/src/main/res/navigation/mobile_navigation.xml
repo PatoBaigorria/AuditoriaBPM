@@ -98,4 +98,16 @@
             android:name="legajo"
             app:argType="integer" />
     </fragment>
+
+    <fragment
+        android:id="@+id/nav_export_excel"
+        android:name="baigorriap.auditoriabpm.ui.excel.ExportExcelFragment"
+        android:label="Exportar a Excel"
+        tools:layout="@layout/fragment_export_excel">
+        <action
+            android:id="@+id/action_nav_export_excel_to_nav_home"
+            app:destination="@id/nav_home"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="true" />
+    </fragment>
 </navigation>

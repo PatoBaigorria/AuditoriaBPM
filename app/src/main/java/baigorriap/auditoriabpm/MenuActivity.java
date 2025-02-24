@@ -2,30 +2,54 @@ package baigorriap.auditoriabpm;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 
 import com.google.android.material.navigation.NavigationView;
 
-import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.appcompat.app.AppCompatActivity;
+
+import java.util.Locale;
 
 import baigorriap.auditoriabpm.databinding.ActivityMenuBinding;
 
 public class MenuActivity extends AppCompatActivity {
+
     private SharedPreferences sharedPreferences;
     private AppBarConfiguration mAppBarConfiguration;
     private ActivityMenuBinding binding;
     private NavController navController;
 
     @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(updateBaseContextLocale(base));
+    }
+
+    private Context updateBaseContextLocale(Context context) {
+        Locale locale = new Locale("es", "ES");
+        Locale.setDefault(locale);
+
+        Configuration configuration = context.getResources().getConfiguration();
+        configuration.setLocale(locale);
+        configuration.setLayoutDirection(locale);
+
+        return context.createConfigurationContext(configuration);
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Configurar el idioma español
+        setLocale(this);
+
         binding = ActivityMenuBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
@@ -37,7 +61,7 @@ public class MenuActivity extends AppCompatActivity {
 
         // Definir los destinos en los que no se mostrará la flecha de retroceso
         mAppBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow, R.id.nav_auditoria)
+                R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow, R.id.nav_auditoria, R.id.nav_export_excel)
                 .setOpenableLayout(drawer)
                 .build();
 
@@ -81,6 +105,16 @@ public class MenuActivity extends AppCompatActivity {
             // Navegar al fragmento de auditoría con los datos
             navController.navigate(destino, bundle);
         }
+    }
+
+    private void setLocale(Context context) {
+        Locale locale = new Locale("es", "ES");
+        Locale.setDefault(locale);
+
+        Configuration configuration = context.getResources().getConfiguration();
+        configuration.setLocale(locale);
+        configuration.setLayoutDirection(locale);
+        context.getResources().updateConfiguration(configuration, context.getResources().getDisplayMetrics());
     }
 
     @Override

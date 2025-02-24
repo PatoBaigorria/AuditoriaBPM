@@ -13,6 +13,10 @@
             android:icon="@drawable/ic_reportes_analytics"
             android:title="Reportes" />
         <item
+            android:id="@+id/nav_export_excel"
+            android:icon="@drawable/ic_excel"
+            android:title="Exportar a Excel" />
+        <item
             android:id="@+id/nav_slideshow"
             android:icon="@drawable/ic_exit"
             android:title="@string/menu_slideshow" />

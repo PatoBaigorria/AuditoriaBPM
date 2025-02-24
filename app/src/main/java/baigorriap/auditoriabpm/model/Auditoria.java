@@ -1,7 +1,9 @@
 package baigorriap.auditoriabpm.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class Auditoria implements Serializable {
     private int idAuditoria;
@@ -13,6 +15,7 @@ public class Auditoria implements Serializable {
     private String comentario;
     private String firma;        // SVG de la firma
     private boolean noConforme;  // Indica si el operario está conforme con la auditoría
+    private List<AuditoriaItemBPM> auditoriaItems = new ArrayList<>(); // Lista de items de la auditoría
 
     public Auditoria() {
     }
@@ -100,5 +103,13 @@ public class Auditoria implements Serializable {
 
     public void setNoConforme(boolean noConforme) {
         this.noConforme = noConforme;
+    }
+
+    public List<AuditoriaItemBPM> getAuditoriaItems() {
+        return auditoriaItems;
+    }
+
+    public void setAuditoriaItems(List<AuditoriaItemBPM> auditoriaItems) {
+        this.auditoriaItems = auditoriaItems;
     }
 }

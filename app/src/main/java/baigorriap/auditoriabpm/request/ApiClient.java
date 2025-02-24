@@ -100,6 +100,14 @@ public class ApiClient {
         @GET("Auditorias/auditorias-operario")
         Call<List<OperarioSinAuditoria>> obtenerOperariosSinAuditorias(@Header("Authorization") String token);
 
+        @GET("Auditorias/por-fecha")
+        Call<List<Auditoria>> obtenerAuditoriasPorFecha(
+            @Header("Authorization") String token,
+            @Query("fromDate") String fromDate,
+            @Query("toDate") String toDate,
+            @Query("supervisorId") int supervisorId
+        );
+
         @GET("Auditorias/cantidad-auditorias-mes-a-mes")
         Call<Map<String, EstadisticasAuditoria>> obtenerEstadisticasAuditoria(
                 @Header("Authorization") String token, 
