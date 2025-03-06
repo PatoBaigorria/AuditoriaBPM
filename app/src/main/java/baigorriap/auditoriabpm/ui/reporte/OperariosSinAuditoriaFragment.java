@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
@@ -47,7 +48,6 @@ public class OperariosSinAuditoriaFragment extends Fragment implements TextWatch
     private TextInputEditText etBusqueda;
     private ChipGroup chipGroupLineas;
     private TextView tvTotalOperarios;
-    private TextView tvPorcentajeSinAuditoria;
     private List<OperarioSinAuditoria> todosLosOperarios = new ArrayList<>();
     private Set<Integer> lineasSeleccionadas = new HashSet<>();
     private View root;
@@ -112,11 +112,6 @@ public class OperariosSinAuditoriaFragment extends Fragment implements TextWatch
         tvTotalOperarios = root.findViewById(R.id.tvTotalOperarios);
         if (tvTotalOperarios == null) {
             throw new IllegalStateException("No se pudo encontrar el TextView de total");
-        }
-
-        tvPorcentajeSinAuditoria = root.findViewById(R.id.tvPorcentajeSinAuditoria);
-        if (tvPorcentajeSinAuditoria == null) {
-            throw new IllegalStateException("No se pudo encontrar el TextView de porcentaje");
         }
     }
 
@@ -233,13 +228,6 @@ public class OperariosSinAuditoriaFragment extends Fragment implements TextWatch
         if (operarios == null) return;
         
         int total = operarios.size();
-        tvTotalOperarios.setText(String.format("Total de operarios: %d", total));
-        
-        if (total > 0) {
-            double porcentaje = (double) total / todosLosOperarios.size() * 100;
-            tvPorcentajeSinAuditoria.setText(String.format("Porcentaje sin auditoría: %.1f%%", porcentaje));
-        } else {
-            tvPorcentajeSinAuditoria.setText("Porcentaje sin auditoría: 0%");
-        }
+        tvTotalOperarios.setText(String.format("Total de Operarios: %d", total));
     }
 }

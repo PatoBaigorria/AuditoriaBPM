@@ -265,11 +265,83 @@ public class HomeViewModel extends AndroidViewModel {
         mLegajo.setValue("");
     }
 
-    public void limpiarTodosDatos2() {
-        mOperario.setValue(null);
-        mIdActividad.setValue(null);
-        mIdLinea.setValue(null);
-        mListaActividad.setValue(null);
-        mListaLinea.setValue(null);
+    public void buscarOperario(int legajo) {
+        String token = ApiClient.leerToken(application);
+        if (token == null) {
+            mErrorMessage.setValue("Error: No se encontró el token");
+            return;
+        }
+
+        ApiClient.getEndPoints().obtenerOperario("Bearer " + token, legajo).enqueue(new Callback<Operario>() {
+            @Override
+            public void onResponse(Call<Operario> call, Response<Operario> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Operario operario = response.body();
+                    mOperario.setValue(operario);
+                    mIdOperario.setValue(operario.getIdOperario());
+                    mIdActividad.setValue(operario.getIdActividad());
+                    mIdLinea.setValue(operario.getIdLinea());
+
+                    // Cargar actividades y líneas asociadas
+                    cargarDatosPorLegajo(legajo);
+                } else {
+                    mOperario.setValue(null);
+                    mErrorMessage.setValue("No se encontró ningún operario con ese legajo");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Operario> call, Throwable t) {
+                Log.e("HomeViewModel", "Error al buscar operario", t);
+                mOperario.setValue(null);
+                mErrorMessage.setValue("Error al buscar operario: " + t.getMessage());
+            }
+        });
+    }
+
+    private void cargarActividades() {
+        String token = ApiClient.leerToken(application);
+        if (token == null) return;
+
+        ApiClient.getEndPoints().obtenerTodasLasActividades("Bearer " + token).enqueue(new Callback<List<Actividad>>() {
+            @Override
+            public void onResponse(Call<List<Actividad>> call, Response<List<Actividad>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Actividad> actividades = new ArrayList<>();
+                    actividades.add(new Actividad(-1, "Actividad")); // Placeholder
+                    actividades.addAll(response.body());
+                    mListaActividad.setValue(actividades);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Actividad>> call, Throwable t) {
+                Log.e("HomeViewModel", "Error al cargar actividades", t);
+                mErrorMessage.setValue("Error al cargar actividades: " + t.getMessage());
+            }
+        });
+    }
+
+    private void cargarLineas() {
+        String token = ApiClient.leerToken(application);
+        if (token == null) return;
+
+        ApiClient.getEndPoints().obtenerTodasLasLineas("Bearer " + token).enqueue(new Callback<List<Linea>>() {
+            @Override
+            public void onResponse(Call<List<Linea>> call, Response<List<Linea>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Linea> lineas = new ArrayList<>();
+                    lineas.add(new Linea(-1, "Línea")); // Placeholder
+                    lineas.addAll(response.body());
+                    mListaLinea.setValue(lineas);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Linea>> call, Throwable t) {
+                Log.e("HomeViewModel", "Error al cargar líneas", t);
+                mErrorMessage.setValue("Error al cargar líneas: " + t.getMessage());
+            }
+        });
     }
 }

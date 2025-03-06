@@ -35,12 +35,9 @@ import retrofit2.http.POST;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
-/**
- * Created by etsda on 24/01/2018.
- */
 
 public class ApiClient {
-    public static final String URL = "http://192.168.100.3:5000/";
+    public static final String URL = "http://192.168.100.60:5000/";
     private static MisEndPoints mep;
 
     public static MisEndPoints getEndPoints(){
@@ -54,48 +51,55 @@ public class ApiClient {
     }
 
     public interface MisEndPoints {
+        // Autenticación
         @FormUrlEncoded
         @POST("Supervisores/login")
         Call<String> login(@Field("Legajo") String u, @Field("Clave") String c);
 
+        // Perfil
         @GET("Supervisores")
         Call<Supervisor> miPerfil(@Header("Authorization") String token);
 
+        @GET("Supervisores/{id}")
+        Call<Supervisor> obtenerSupervisor(@Header("Authorization") String token, @Path("id") int idSupervisor);
+
+        // Actividades
         @GET("Actividades/byLegajo")
         Call<List<Actividad>> obtenerActividades(@Header("Authorization") String token, @Query("legajo") int legajo);
 
-        @GET("Lineas/byLegajo")
-        Call<List<Linea>> obtenerLineas(@Header("Authorization") String token, @Query("legajo") int legajo);
-
-        @GET("Operarios/byLegajo")
-        Call<Operario> obtenerOperario(@Header("Authorization") String token, @Query("legajo") int legajo);
+        @GET("Actividades/{id}")
+        Call<Actividad> obtenerActividadPorId(@Header("Authorization") String token, @Path("id") int idActividad);
 
         @GET("Actividades/todas")
         Call<List<Actividad>> obtenerTodasLasActividades(@Header("Authorization") String token);
 
+        // Líneas
+        @GET("Lineas/byLegajo")
+        Call<List<Linea>> obtenerLineas(@Header("Authorization") String token, @Query("legajo") int legajo);
+
+        @GET("Lineas/{id}")
+        Call<Linea> obtenerLineaPorId(@Header("Authorization") String token, @Path("id") int idLinea);
+
         @GET("Lineas/todas")
         Call<List<Linea>> obtenerTodasLasLineas(@Header("Authorization") String token);
 
-        @GET("Actividades")
-        Call<List<Actividad>> obtenerTodasActividades(@Header("Authorization") String token);
+        // Operarios
+        @GET("Operarios/byLegajo")
+        Call<Operario> obtenerOperario(@Header("Authorization") String token, @Query("legajo") int legajo);
 
-        @GET("Lineas")
-        Call<List<Linea>> obtenerTodasLineas(@Header("Authorization") String token);
+        @GET("Operarios/{id}")
+        Call<Operario> obtenerOperarioPorId(@Header("Authorization") String token, @Path("id") int idOperario);
 
         @GET("Operarios/validar-legajo/{legajo}")
         Call<Boolean> verificarLegajo(@Header("Authorization") String token, @Path("legajo") int legajo);
 
+        // Items BPM
+        @GET("ItemsBPM/{id}")
+        Call<ItemBPM> obtenerItemBPMPorId(@Header("Authorization") String token, @Path("id") int idItemBPM);
+
+        // Auditorías
         @POST("Auditorias/alta-auditoria-completa")
         Call<ResponseBody> altaAuditoriaCompleta(@Header("Authorization") String token, @Body AltaAuditoriaRequest auditoria);
-
-        @POST("FirmaPatron/alta")
-        Call<ResponseBody> guardarFirmaPatron(@Header("Authorization") String token, @Body FirmaPatron firmaPatron);
-
-        @POST("FirmaPatron/verificar")
-        Call<Boolean> verificarFirma(@Header("Authorization") String token, @Body FirmaPatron firma);
-
-        @GET("FirmaPatron/operario/{idOperario}")
-        Call<FirmaPatron> obtenerFirmaPatron(@Header("Authorization") String token, @Path("idOperario") int idOperario);
 
         @GET("Auditorias/auditorias-operario")
         Call<List<OperarioSinAuditoria>> obtenerOperariosSinAuditorias(@Header("Authorization") String token);
@@ -120,6 +124,16 @@ public class ApiClient {
             @Header("Authorization") String token, 
             @Query("legajo") int legajo
         );
+
+        // Firma patrón
+        @POST("FirmaPatron/alta")
+        Call<ResponseBody> guardarFirmaPatron(@Header("Authorization") String token, @Body FirmaPatron firmaPatron);
+
+        @POST("FirmaPatron/verificar")
+        Call<Boolean> verificarFirma(@Header("Authorization") String token, @Body FirmaPatron firma);
+
+        @GET("FirmaPatron/operario/{idOperario}")
+        Call<FirmaPatron> obtenerFirmaPatron(@Header("Authorization") String token, @Path("idOperario") int idOperario);
     }
 
     public static void guardarToken(String token, Context context) {

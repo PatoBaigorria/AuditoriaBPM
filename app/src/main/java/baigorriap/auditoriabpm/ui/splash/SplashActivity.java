@@ -8,7 +8,7 @@ import baigorriap.auditoriabpm.LoginActivity;
 import baigorriap.auditoriabpm.R;
 
 public class SplashActivity extends AppCompatActivity {
-    private static final long SPLASH_DELAY = 2000; // 2 segundos
+    private static final long SPLASH_DELAY = 3000; // 3 segundos
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

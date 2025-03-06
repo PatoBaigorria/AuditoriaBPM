@@ -6,9 +6,13 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
@@ -58,20 +62,103 @@ public class HomeFragment extends Fragment {
         spnActividad = binding.spnActividad;
         spnLinea = binding.spnLinea;
 
+        // Método para ocultar el teclado
+        private void hideKeyboard() {
+            View view = requireActivity().getCurrentFocus();
+            if (view != null) {
+                InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                view.clearFocus();
+            }
+        }
+
+        // Configurar el botón siguiente para ocultar el teclado
+        binding.btSiguiente.setOnClickListener(v -> {
+            hideKeyboard();
+            String nombreOperario = tvNombreOp.getText().toString();
+            if (nombreOperario.isEmpty()) {
+                Toast.makeText(getContext(), "El nombre del operario está vacío", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            // Toma el valor seleccionado directamente de los spinners
+            Actividad selectedActividad = (Actividad) spnActividad.getSelectedItem();
+            Linea selectedLinea = (Linea) spnLinea.getSelectedItem();
+
+            if (selectedActividad == null || selectedActividad.getIdActividad() == -1) {
+                Toast.makeText(getContext(), "Por favor selecciona una actividad", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (selectedLinea == null || selectedLinea.getIdLinea() == -1) {
+                Toast.makeText(getContext(), "Por favor selecciona una línea", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            idActividad = selectedActividad.getIdActividad();
+            idLinea = selectedLinea.getIdLinea();
+
+            Bundle bundle = new Bundle();
+            bundle.putInt("idOperario", idOperario);
+            bundle.putString("nombreOperario", nombreOperario);
+            bundle.putInt("idSupervisor", idSupervisor);
+            bundle.putInt("idActividad", idActividad);
+            bundle.putInt("idLinea", idLinea);
+
+            NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
+            navController.navigate(R.id.nav_auditoria, bundle);
+        });
+
+        // Configurar el EditText del legajo
+        binding.etLegajo.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE || 
+                (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
+                
+                hideKeyboard();
+                
+                String legajo = v.getText().toString().trim();
+                if (!legajo.isEmpty()) {
+                    try {
+                        int legajoNum = Integer.parseInt(legajo);
+                        if (legajoNum > 0) {
+                            vm.cargarOperarioPorLegajo(legajoNum);
+                            vm.cargarDatosPorLegajo(legajoNum);
+                            return true;
+                        } else {
+                            binding.etLegajo.setError("El legajo debe ser mayor a 0");
+                        }
+                    } catch (NumberFormatException e) {
+                        binding.etLegajo.setError("Ingrese un número válido");
+                    }
+                } else {
+                    binding.etLegajo.setError("Ingrese un legajo");
+                }
+            }
+            return false;
+        });
+
+        // Configurar para ocultar el teclado cuando se toca fuera del EditText
+        root.setOnTouchListener((v, event) -> {
+            if (event.getAction() == android.view.MotionEvent.ACTION_DOWN) {
+                hideKeyboard();
+            }
+            return false;
+        });
+
         // Inicializar los spinners con placeholders al inicio
         vm.limpiarSpinnersConHint();
         
         // Crear y configurar adaptadores iniciales
         List<Actividad> actividadesIniciales = new ArrayList<>();
         actividadesIniciales.add(new Actividad(-1, "Actividad"));
-        actividadAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, actividadesIniciales);
-        actividadAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        actividadAdapter = new ArrayAdapter<>(requireContext(), R.layout.spinner_item, actividadesIniciales);
+        actividadAdapter.setDropDownViewResource(R.layout.spinner_item);
         spnActividad.setAdapter(actividadAdapter);
 
         List<Linea> lineasIniciales = new ArrayList<>();
         lineasIniciales.add(new Linea(-1, "Línea"));
-        lineaAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, lineasIniciales);
-        lineaAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        lineaAdapter = new ArrayAdapter<>(requireContext(), R.layout.spinner_item, lineasIniciales);
+        lineaAdapter.setDropDownViewResource(R.layout.spinner_item);
         spnLinea.setAdapter(lineaAdapter);
 
         // Configura el TextView
@@ -187,8 +274,8 @@ public class HomeFragment extends Fragment {
         // Observa el LiveData de la lista de actividades
         vm.getMListaActividad().observe(getViewLifecycleOwner(), actividades -> {
             if (actividades != null && !actividades.isEmpty()) {
-                actividadAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, actividades);
-                actividadAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                actividadAdapter = new ArrayAdapter<>(requireContext(), R.layout.spinner_item, actividades);
+                actividadAdapter.setDropDownViewResource(R.layout.spinner_item);
                 spnActividad.setAdapter(actividadAdapter);
                 
                 // Seleccionar la actividad del operario si existe
@@ -207,8 +294,8 @@ public class HomeFragment extends Fragment {
         // Observa el LiveData de la lista de líneas
         vm.getMListaLinea().observe(getViewLifecycleOwner(), lineas -> {
             if (lineas != null && !lineas.isEmpty()) {
-                lineaAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, lineas);
-                lineaAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                lineaAdapter = new ArrayAdapter<>(requireContext(), R.layout.spinner_item, lineas);
+                lineaAdapter.setDropDownViewResource(R.layout.spinner_item);
                 spnLinea.setAdapter(lineaAdapter);
                 
                 // Seleccionar la línea del operario si existe
@@ -254,42 +341,6 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        // Configuración del botón "Siguiente"
-        binding.btSiguiente.setOnClickListener(v -> {
-            String nombreOperario = tvNombreOp.getText().toString();
-            if (nombreOperario.isEmpty()) {
-                Toast.makeText(getContext(), "El nombre del operario está vacío", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            
-            // Toma el valor seleccionado directamente de los spinners
-            Actividad selectedActividad = (Actividad) spnActividad.getSelectedItem();
-            Linea selectedLinea = (Linea) spnLinea.getSelectedItem();
-
-            if (selectedActividad == null || selectedActividad.getIdActividad() == -1) {
-                Toast.makeText(getContext(), "Por favor selecciona una actividad", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            if (selectedLinea == null || selectedLinea.getIdLinea() == -1) {
-                Toast.makeText(getContext(), "Por favor selecciona una línea", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            idActividad = selectedActividad.getIdActividad();
-            idLinea = selectedLinea.getIdLinea();
-
-            Bundle bundle = new Bundle();
-            bundle.putInt("idOperario", idOperario);
-            bundle.putString("nombreOperario", nombreOperario);
-            bundle.putInt("idSupervisor", idSupervisor);
-            bundle.putInt("idActividad", idActividad);
-            bundle.putInt("idLinea", idLinea);
-
-            NavController navController = Navigation.findNavController(requireActivity(), R.id.nav_host_fragment_content_main);
-            navController.navigate(R.id.nav_auditoria, bundle);
-        });
-
         getParentFragmentManager().setFragmentResultListener("needsReset", this, (requestKey, result) -> {
             if (result.getBoolean("reset", false)) {
                 vm.limpiarTodosDatos();
@@ -316,14 +367,14 @@ public class HomeFragment extends Fragment {
             // Inicializar spinners con placeholders
             List<Actividad> actividadesIniciales = new ArrayList<>();
             actividadesIniciales.add(new Actividad(-1, "Actividad"));
-            actividadAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, actividadesIniciales);
-            actividadAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            actividadAdapter = new ArrayAdapter<>(requireContext(), R.layout.spinner_item, actividadesIniciales);
+            actividadAdapter.setDropDownViewResource(R.layout.spinner_item);
             spnActividad.setAdapter(actividadAdapter);
 
             List<Linea> lineasIniciales = new ArrayList<>();
             lineasIniciales.add(new Linea(-1, "Línea"));
-            lineaAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, lineasIniciales);
-            lineaAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            lineaAdapter = new ArrayAdapter<>(requireContext(), R.layout.spinner_item, lineasIniciales);
+            lineaAdapter.setDropDownViewResource(R.layout.spinner_item);
             spnLinea.setAdapter(lineaAdapter);
         }
     }
