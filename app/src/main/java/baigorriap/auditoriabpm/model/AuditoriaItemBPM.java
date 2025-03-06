@@ -1,8 +1,10 @@
 package baigorriap.auditoriabpm.model;
 
+import android.util.Log;
 import java.io.Serializable;
 
 public class AuditoriaItemBPM implements Serializable {
+    private static final String TAG = "AuditoriaItemBPM";
     private int idAuditoriaItemBPM;
     private int idAuditoria;
     private int idItemBPM;
@@ -47,17 +49,20 @@ public class AuditoriaItemBPM implements Serializable {
     }
 
     public void setEstado(EstadoEnum estado) {
+        Log.d(TAG, "Estableciendo estado para item " + idItemBPM + ": " + estado);
         this.estado = estado;
     }
+
     @Override
     public String toString() {
         return "AuditoriaItemBPM{" +
                 "idAuditoriaItemBPM=" + idAuditoriaItemBPM +
                 ", idAuditoria=" + idAuditoria +
                 ", idItemBPM=" + idItemBPM +
-                ", estado=" + estado + // Esto asume que 'estado' tiene un método toString()
+                ", estado=" + estado +
                 '}';
     }
+
     public enum EstadoEnum {
         OK(1),
         NOOK(2),
@@ -74,14 +79,15 @@ public class AuditoriaItemBPM implements Serializable {
         }
 
         public static EstadoEnum fromValue(int value) {
+            Log.d(TAG, "Convirtiendo valor " + value + " a EstadoEnum");
             for (EstadoEnum estado : EstadoEnum.values()) {
                 if (estado.getValue() == value) {
+                    Log.d(TAG, "Valor " + value + " convertido a " + estado);
                     return estado;
                 }
             }
+            Log.w(TAG, "No se encontró un EstadoEnum para el valor: " + value);
             throw new IllegalArgumentException("No existe un EstadoEnum con el valor: " + value);
         }
     }
-
-
 }

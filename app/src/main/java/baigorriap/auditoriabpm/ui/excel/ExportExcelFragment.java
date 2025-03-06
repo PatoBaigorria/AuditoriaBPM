@@ -3,12 +3,13 @@ package baigorriap.auditoriabpm.ui.excel;
 import android.Manifest;
 import android.app.DatePickerDialog;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.ContentResolver;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -26,7 +27,9 @@ import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import baigorriap.auditoriabpm.model.Auditoria;
 import baigorriap.auditoriabpm.model.AuditoriaItemBPM;
+import baigorriap.auditoriabpm.model.AuditoriaItemBPM.EstadoEnum;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -46,11 +49,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import baigorriap.auditoriabpm.databinding.FragmentExportExcelBinding;
-import baigorriap.auditoriabpm.model.Auditoria;
 import baigorriap.auditoriabpm.model.Actividad;
 import baigorriap.auditoriabpm.model.ItemBPM;
 import baigorriap.auditoriabpm.model.Linea;
@@ -73,8 +76,9 @@ public class ExportExcelFragment extends Fragment {
 
     private Map<Integer, String> actividadesCache = new HashMap<>();
     private Map<Integer, String> lineasCache = new HashMap<>();
-    private Map<Integer, String> operariosCache = new HashMap<>();
     private Map<Integer, String> itemsBPMCache = new HashMap<>();
+    private Map<Integer, String> supervisoresCache = new HashMap<>();
+    private Map<Integer, String> operariosCache = new HashMap<>();
     private String supervisorNombre;
 
     @Override
@@ -213,7 +217,9 @@ public class ExportExcelFragment extends Fragment {
     private void exportToCSV() {
         String timeStamp = String.valueOf(System.currentTimeMillis());
         String fileName = "auditorias_" + timeStamp + ".csv";
-        File file = new File(requireContext().getExternalFilesDir(null), fileName);
+        File file = new File(requireContext().getCacheDir(), fileName);
+        Log.d(TAG, "Creando archivo CSV en: " + file.getAbsolutePath());
+        
         CSVWriter writer = null;
         AtomicInteger procesados = new AtomicInteger(0);
         AtomicInteger errores = new AtomicInteger(0);
@@ -243,52 +249,28 @@ public class ExportExcelFragment extends Fragment {
                 Log.d(TAG, "Procesando auditoría ID: " + auditoria.getIdAuditoria() + " con " + auditoria.getAuditoriaItems().size() + " items");
                 
                 for (AuditoriaItemBPM item : auditoria.getAuditoriaItems()) {
-                    final Auditoria finalAuditoria = auditoria;
-                    
-                    obtenerDescripcionItemBPM(item.getIdItemBPM(), new OnItemBPMCargadoListener() {
-                        @Override
-                        public void onItemCargado(String descripcionItem) {
-                            try {
-                                if (!writerClosed.get()) {
-                                    String[] campos = {
-                                        dateFormatter.format(finalAuditoria.getFecha()),
-                                        escaparCSV(supervisorNombre),
-                                        escaparCSV(obtenerNombreOperario(finalAuditoria.getIdOperario())),
-                                        escaparCSV(obtenerDescripcionActividad(finalAuditoria.getIdActividad())),
-                                        escaparCSV(obtenerDescripcionLinea(finalAuditoria.getIdLinea())),
-                                        escaparCSV(descripcionItem),
-                                        item.getEstado() != null ? item.getEstado().toString() : "No especificado",
-                                        escaparCSV(finalAuditoria.getComentario())
-                                    };
-
-                                    synchronized (finalWriter) {
-                                        if (!writerClosed.get()) {
-                                            finalWriter.writeNext(campos);
-                                            procesados.incrementAndGet();
-                                        }
-                                    }
-                                }
-                            } catch (Exception e) {
-                                Log.e(TAG, "Error escribiendo línea", e);
-                                errores.incrementAndGet();
-                            } finally {
-                                latch.countDown();
-                                updateProgress(procesados.get(), finalTotalItems);
-                                checkExportCompletion(latch, finalWriter, writerClosed, procesados.get(), errores.get(), finalTotalItems, file);
-                            }
-                        }
-
-                        @Override
-                        public void onError(String error) {
-                            Log.e(TAG, "Error al obtener item " + item.getIdItemBPM() + ": " + error);
-                            errores.incrementAndGet();
-                            latch.countDown();
-                            updateProgress(procesados.get(), finalTotalItems);
-                            checkExportCompletion(latch, finalWriter, writerClosed, procesados.get(), errores.get(), finalTotalItems, file);
-                        }
-                    });
+                    procesarItem(finalWriter, auditoria, item, latch);
                 }
             }
+
+            // Asegurarnos de que el archivo se cierre correctamente
+            final File finalFile = file;
+            new Thread(() -> {
+                try {
+                    // Esperar a que todos los items se procesen con un timeout de 30 segundos
+                    if (latch.await(30, TimeUnit.SECONDS)) {
+                        Log.d(TAG, "Todos los items procesados correctamente");
+                    } else {
+                        Log.w(TAG, "Timeout esperando procesamiento de items");
+                    }
+                    checkExportCompletion(latch, finalWriter, writerClosed, 
+                                        procesados.get(), errores.get(), 
+                                        finalTotalItems, finalFile);
+                } catch (InterruptedException e) {
+                    Log.e(TAG, "Error esperando procesamiento de items", e);
+                }
+            }).start();
+
         } catch (IOException e) {
             Log.e(TAG, "Error al crear archivo CSV", e);
             if (writer != null && !writerClosed.get()) {
@@ -305,14 +287,23 @@ public class ExportExcelFragment extends Fragment {
 
     private void checkExportCompletion(CountDownLatch latch, CSVWriter writer, AtomicBoolean writerClosed, 
                                      int procesados, int errores, int total, File file) {
+        Log.d(TAG, "Verificando completitud de exportación. Latch count: " + latch.getCount() + 
+              ", writerClosed: " + writerClosed.get() + 
+              ", procesados: " + procesados + 
+              ", errores: " + errores + 
+              ", total: " + total);
+
         if (latch.getCount() == 0 && !writerClosed.get()) {
+            Log.d(TAG, "Condiciones cumplidas para cerrar writer");
             synchronized (writer) {
                 if (!writerClosed.get()) {
                     try {
                         writer.close();
                         writerClosed.set(true);
+                        Log.d(TAG, "Writer cerrado exitosamente");
                         
                         requireActivity().runOnUiThread(() -> {
+                            Log.d(TAG, "Ejecutando en UI thread");
                             binding.progressBar.setVisibility(View.GONE);
                             binding.progressText.setVisibility(View.GONE);
                             
@@ -321,16 +312,178 @@ public class ExportExcelFragment extends Fragment {
                                 : "Archivo CSV exportado exitosamente";
                                 
                             Toast.makeText(requireContext(), mensaje, Toast.LENGTH_LONG).show();
+                            Log.d(TAG, "Intentando compartir archivo: " + file.getAbsolutePath());
+                            Log.d(TAG, "¿Archivo existe? " + file.exists() + " ¿Se puede leer? " + file.canRead());
                             
-                            if (errores == 0) {
-                                shareFile(file);
-                            }
+                            shareFile(file);
                         });
                     } catch (IOException e) {
                         Log.e(TAG, "Error al cerrar writer", e);
+                        requireActivity().runOnUiThread(() -> {
+                            Toast.makeText(requireContext(), 
+                                "Error al finalizar la exportación: " + e.getMessage(), 
+                                Toast.LENGTH_LONG).show();
+                        });
                     }
                 }
             }
+        }
+    }
+
+    private void shareFile(File file) {
+        try {
+            Log.d(TAG, "Iniciando proceso de compartir archivo");
+            Log.d(TAG, "Archivo a compartir: " + file.getAbsolutePath());
+            Log.d(TAG, "¿Archivo existe? " + file.exists());
+            Log.d(TAG, "¿Archivo se puede leer? " + file.canRead());
+            
+            Context context = requireContext();
+            String authority = context.getPackageName() + ".provider";
+            Log.d(TAG, "Usando authority: " + authority);
+            
+            Uri uri = FileProvider.getUriForFile(context, authority, file);
+            Log.d(TAG, "URI generada: " + uri.toString());
+
+            // Intent para descargar/guardar
+            Intent shareIntent = new Intent(Intent.ACTION_SEND);
+            shareIntent.setType("text/csv");
+            shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
+            // Intent para abrir
+            Intent viewIntent = new Intent(Intent.ACTION_VIEW);
+            viewIntent.setDataAndType(uri, "text/csv");
+            viewIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
+            // Crear un chooser que combine ambas opciones
+            Intent chooserIntent = Intent.createChooser(shareIntent, "Guardar o abrir archivo CSV");
+            chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[] { viewIntent });
+            chooserIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
+            // Otorgar permisos a todas las apps que puedan manejar el intent
+            List<ResolveInfo> resInfoList = context.getPackageManager().queryIntentActivities(chooserIntent, PackageManager.MATCH_DEFAULT_ONLY);
+            for (ResolveInfo resolveInfo : resInfoList) {
+                String packageName = resolveInfo.activityInfo.packageName;
+                context.grantUriPermission(packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            }
+
+            Log.d(TAG, "Lanzando intent chooser");
+            startActivity(chooserIntent);
+            Log.d(TAG, "Intent chooser lanzado");
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error al compartir el archivo", e);
+            Toast.makeText(requireContext(),
+                "Error al compartir el archivo: " + e.getMessage(),
+                Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void procesarItem(CSVWriter writer, Auditoria auditoria, AuditoriaItemBPM item, CountDownLatch latch) {
+        Log.d(TAG, "Procesando item BPM: " + item.getIdItemBPM() + " con estado: " + item.getEstado());
+        SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault());
+
+        AtomicBoolean supervisorCargado = new AtomicBoolean(false);
+        AtomicBoolean operarioCargado = new AtomicBoolean(false);
+        AtomicBoolean itemBPMCargado = new AtomicBoolean(false);
+
+        final String[] nombreSupervisor = {null};
+        final String[] nombreOperario = {null};
+        final String[] descripcionItem = {null};
+
+        Runnable checkAndWrite = () -> {
+            if (supervisorCargado.get() && operarioCargado.get() && itemBPMCargado.get()) {
+                String estadoLegible = obtenerEstadoLegible(item);
+                Log.d(TAG, "Estado legible para item " + item.getIdItemBPM() + ": " + estadoLegible);
+                
+                String[] campos = {
+                    dateFormatter.format(auditoria.getFecha()),
+                    escaparCSV(nombreSupervisor[0]),
+                    escaparCSV(nombreOperario[0]),
+                    escaparCSV(obtenerDescripcionActividad(auditoria.getIdActividad())),
+                    escaparCSV(obtenerDescripcionLinea(auditoria.getIdLinea())),
+                    escaparCSV(descripcionItem[0]),
+                    estadoLegible,
+                    escaparCSV(auditoria.getComentario())
+                };
+                synchronized (writer) {
+                    writer.writeNext(campos);
+                }
+                latch.countDown();
+            }
+        };
+
+        obtenerDescripcionSupervisor(auditoria.getIdSupervisor(), new OnSupervisorCargadoListener() {
+            @Override
+            public void onSupervisorCargado(String nombre) {
+                nombreSupervisor[0] = nombre;
+                supervisorCargado.set(true);
+                checkAndWrite.run();
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Error cargando supervisor: " + error);
+                nombreSupervisor[0] = "Supervisor " + auditoria.getIdSupervisor();
+                supervisorCargado.set(true);
+                checkAndWrite.run();
+            }
+        });
+
+        obtenerDescripcionOperario(auditoria.getIdOperario(), new OnOperarioCargadoListener() {
+            @Override
+            public void onOperarioCargado(String nombre) {
+                nombreOperario[0] = nombre;
+                operarioCargado.set(true);
+                checkAndWrite.run();
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Error cargando operario: " + error);
+                nombreOperario[0] = "Operario " + auditoria.getIdOperario();
+                operarioCargado.set(true);
+                checkAndWrite.run();
+            }
+        });
+
+        obtenerDescripcionItemBPM(item.getIdItemBPM(), new OnItemBPMCargadoListener() {
+            @Override
+            public void onItemCargado(String descripcion) {
+                descripcionItem[0] = descripcion;
+                itemBPMCargado.set(true);
+                checkAndWrite.run();
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Error cargando item BPM: " + error);
+                descripcionItem[0] = "Item " + item.getIdItemBPM();
+                itemBPMCargado.set(true);
+                checkAndWrite.run();
+            }
+        });
+    }
+
+    private String obtenerEstadoLegible(AuditoriaItemBPM item) {
+        if (item.getEstado() == null) {
+            Log.d(TAG, "Estado nulo para item " + item.getIdItemBPM());
+            return "N/A";
+        }
+        
+        EstadoEnum estado = item.getEstado();
+        Log.d(TAG, "Obteniendo estado legible para item " + item.getIdItemBPM() + ". Estado enum: " + estado);
+        
+        switch (estado) {
+            case OK:
+                return "OK";
+            case NOOK:
+                return "NO OK";
+            case NA:
+                return "N/A";
+            default:
+                Log.w(TAG, "Estado no reconocido para item " + item.getIdItemBPM() + ": " + estado);
+                return "No especificado";
         }
     }
 
@@ -347,47 +500,6 @@ public class ExportExcelFragment extends Fragment {
             binding.progressText.setVisibility(View.GONE);
             Toast.makeText(requireContext(), mensaje, Toast.LENGTH_LONG).show();
         });
-    }
-
-    private void shareFile(File file) {
-        try {
-            Uri uri = FileProvider.getUriForFile(
-                requireContext(),
-                requireContext().getApplicationContext().getPackageName() + ".provider",
-                file
-            );
-
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setDataAndType(uri, "text/csv");
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-            try {
-                startActivity(Intent.createChooser(intent, "Abrir archivo CSV con..."));
-            } catch (ActivityNotFoundException e) {
-                Toast.makeText(requireContext(), 
-                    "No se encontró una aplicación para abrir archivos CSV", 
-                    Toast.LENGTH_LONG).show();
-                
-                // Intentar compartir como alternativa
-                Intent shareIntent = new Intent(Intent.ACTION_SEND);
-                shareIntent.setType("text/csv");
-                shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
-                shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                
-                try {
-                    startActivity(Intent.createChooser(shareIntent, "Compartir archivo CSV"));
-                } catch (ActivityNotFoundException ex) {
-                    Toast.makeText(requireContext(), 
-                        "No se pudo compartir el archivo", 
-                        Toast.LENGTH_LONG).show();
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error al compartir archivo", e);
-            Toast.makeText(requireContext(), 
-                "Error al compartir archivo: " + e.getMessage(), 
-                Toast.LENGTH_LONG).show();
-        }
     }
 
     private String escaparCSV(String texto) {
@@ -410,7 +522,7 @@ public class ExportExcelFragment extends Fragment {
 
         // Contador para saber cuándo se han completado todas las cargas
         final int[] loadCount = {0};
-        final int TOTAL_LOADS = 4; // actividades, líneas, supervisor y operarios
+        final int TOTAL_LOADS = 3; // actividades, líneas y operarios
 
         Runnable checkAllLoaded = () -> {
             loadCount[0]++;
@@ -466,24 +578,8 @@ public class ExportExcelFragment extends Fragment {
         });
 
         // Cargar supervisor
-        ApiClient.getEndPoints().miPerfil("Bearer " + token).enqueue(new Callback<Supervisor>() {
-            @Override
-            public void onResponse(Call<Supervisor> call, Response<Supervisor> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    Supervisor supervisor = response.body();
-                    supervisorNombre = supervisor.getNombre() + " " + supervisor.getApellido();
-                    Log.d(TAG, "Supervisor cargado: " + supervisorNombre);
-                }
-                checkAllLoaded.run();
-            }
-
-            @Override
-            public void onFailure(Call<Supervisor> call, Throwable t) {
-                Log.e(TAG, "Error al cargar supervisor", t);
-                mostrarError("Error al cargar supervisor: " + t.getMessage());
-                checkAllLoaded.run();
-            }
-        });
+        supervisorNombre = "No especificado";
+        checkAllLoaded.run();
 
         // Cargar todos los operarios
         ApiClient.getEndPoints().obtenerOperariosSinAuditorias("Bearer " + token).enqueue(new Callback<List<OperarioSinAuditoria>>() {
@@ -507,51 +603,149 @@ public class ExportExcelFragment extends Fragment {
         });
     }
 
-    private void obtenerDescripcionItemBPM(int idItemBPM, OnItemBPMCargadoListener listener) {
-        Log.d(TAG, "Obteniendo descripción para item BPM ID: " + idItemBPM);
-        
+    private void obtenerDescripcionItemBPM(int idItemBPM, final OnItemBPMCargadoListener listener) {
+        if (idItemBPM <= 0) {
+            listener.onItemCargado("No especificado");
+            return;
+        }
+
         // Primero intentar obtener del cache
         if (itemsBPMCache.containsKey(idItemBPM)) {
-            String descripcion = itemsBPMCache.get(idItemBPM);
-            Log.d(TAG, "Item BPM ID " + idItemBPM + " encontrado en caché: " + descripcion);
-            listener.onItemCargado(descripcion);
+            listener.onItemCargado(itemsBPMCache.get(idItemBPM));
             return;
         }
 
-        // Si no está en cache, obtener de la API
         String token = ApiClient.leerToken(requireContext());
         if (token == null) {
-            Log.e(TAG, "Token nulo al intentar obtener item BPM ID " + idItemBPM);
-            listener.onItemCargado("Item BPM " + idItemBPM);
+            listener.onError("Token no disponible");
             return;
         }
 
-        Log.d(TAG, "Solicitando item BPM ID " + idItemBPM + " a la API");
         ApiClient.getEndPoints().obtenerItemBPMPorId("Bearer " + token, idItemBPM).enqueue(new Callback<ItemBPM>() {
             @Override
             public void onResponse(Call<ItemBPM> call, Response<ItemBPM> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     ItemBPM item = response.body();
-                    itemsBPMCache.put(item.getIdItem(), item.getDescripcion());
-                    Log.d(TAG, "Item BPM ID " + idItemBPM + " obtenido de API: " + item.getDescripcion());
-                    listener.onItemCargado(item.getDescripcion());
+                    String descripcion = item.getDescripcion();
+                    descripcion = descripcion != null ? descripcion : "Item " + idItemBPM;
+                    itemsBPMCache.put(idItemBPM, descripcion);
+                    listener.onItemCargado(descripcion);
                 } else {
-                    String descripcionPorDefecto = "Item BPM " + idItemBPM;
-                    Log.e(TAG, "Error al obtener item ID " + idItemBPM + ". Código: " + response.code() + ". Error: " + response.errorBody());
-                    listener.onItemCargado(descripcionPorDefecto);
+                    // En caso de error 404 u otro error, usar un valor por defecto
+                    String valorPorDefecto = "Item " + idItemBPM;
+                    itemsBPMCache.put(idItemBPM, valorPorDefecto);
+                    listener.onItemCargado(valorPorDefecto);
                 }
             }
 
             @Override
             public void onFailure(Call<ItemBPM> call, Throwable t) {
-                Log.e(TAG, "Error en llamada de item " + idItemBPM, t);
-                listener.onItemCargado("Item BPM " + idItemBPM);
+                String valorPorDefecto = "Item " + idItemBPM;
+                itemsBPMCache.put(idItemBPM, valorPorDefecto);
+                listener.onItemCargado(valorPorDefecto);
+            }
+        });
+    }
+
+    private void obtenerDescripcionOperario(int idOperario, final OnOperarioCargadoListener listener) {
+        if (idOperario <= 0) {
+            listener.onOperarioCargado("No especificado");
+            return;
+        }
+
+        String token = ApiClient.leerToken(requireContext());
+        if (token == null) {
+            listener.onOperarioCargado("Operario " + idOperario);
+            return;
+        }
+
+        // Primero intentar obtener del cache de operarios
+        if (operariosCache.containsKey(idOperario)) {
+            listener.onOperarioCargado(operariosCache.get(idOperario));
+            return;
+        }
+
+        Call<Operario> call = ApiClient.getEndPoints().obtenerOperario("Bearer " + token, idOperario);
+        call.enqueue(new Callback<Operario>() {
+            @Override
+            public void onResponse(Call<Operario> call, Response<Operario> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Operario operario = response.body();
+                    String nombreCompleto = operario.getApellido() + ", " + operario.getNombre();
+                    operariosCache.put(idOperario, nombreCompleto);
+                    listener.onOperarioCargado(nombreCompleto);
+                } else {
+                    // En caso de error 404 u otro error, usar un valor por defecto
+                    String valorPorDefecto = "Operario " + idOperario;
+                    operariosCache.put(idOperario, valorPorDefecto);
+                    listener.onOperarioCargado(valorPorDefecto);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Operario> call, Throwable t) {
+                String valorPorDefecto = "Operario " + idOperario;
+                operariosCache.put(idOperario, valorPorDefecto);
+                listener.onOperarioCargado(valorPorDefecto);
+            }
+        });
+    }
+
+    private void obtenerDescripcionSupervisor(int idSupervisor, final OnSupervisorCargadoListener listener) {
+        if (idSupervisor <= 0) {
+            listener.onSupervisorCargado("No especificado");
+            return;
+        }
+
+        // Primero intentar obtener del cache
+        if (supervisoresCache.containsKey(idSupervisor)) {
+            listener.onSupervisorCargado(supervisoresCache.get(idSupervisor));
+            return;
+        }
+
+        String token = ApiClient.leerToken(requireContext());
+        if (token == null) {
+            listener.onSupervisorCargado("Supervisor " + idSupervisor);
+            return;
+        }
+
+        ApiClient.getEndPoints().obtenerSupervisor("Bearer " + token, idSupervisor).enqueue(new Callback<Supervisor>() {
+            @Override
+            public void onResponse(Call<Supervisor> call, Response<Supervisor> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Supervisor supervisor = response.body();
+                    String nombreCompleto = supervisor.getNombre() + " " + supervisor.getApellido();
+                    supervisoresCache.put(idSupervisor, nombreCompleto);
+                    listener.onSupervisorCargado(nombreCompleto);
+                } else {
+                    // En caso de error 404 u otro error, usar un valor por defecto
+                    String valorPorDefecto = "Supervisor " + idSupervisor;
+                    supervisoresCache.put(idSupervisor, valorPorDefecto);
+                    listener.onSupervisorCargado(valorPorDefecto);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Supervisor> call, Throwable t) {
+                String valorPorDefecto = "Supervisor " + idSupervisor;
+                supervisoresCache.put(idSupervisor, valorPorDefecto);
+                listener.onSupervisorCargado(valorPorDefecto);
             }
         });
     }
 
     private interface OnItemBPMCargadoListener {
         void onItemCargado(String descripcionItem);
+        void onError(String error);
+    }
+
+    private interface OnOperarioCargadoListener {
+        void onOperarioCargado(String nombreOperario);
+        void onError(String error);
+    }
+
+    private interface OnSupervisorCargadoListener {
+        void onSupervisorCargado(String nombreSupervisor);
         void onError(String error);
     }
 
@@ -572,8 +766,9 @@ public class ExportExcelFragment extends Fragment {
         });
     }
 
-    private String obtenerNombreSupervisor(int idSupervisor) {
-        return supervisorNombre != null ? supervisorNombre : "Supervisor " + idSupervisor;
+    private String obtenerNombreCompletoSupervisor(Supervisor supervisor) {
+        if (supervisor == null) return "No especificado";
+        return supervisor.getApellido() + ", " + supervisor.getNombre();
     }
 
     private String obtenerDescripcionActividad(int idActividad) {

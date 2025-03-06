@@ -2,9 +2,16 @@ package baigorriap.auditoriabpm.request;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
 
+import java.lang.reflect.Type;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +20,7 @@ import baigorriap.auditoriabpm.model.Actividad;
 import baigorriap.auditoriabpm.model.AltaAuditoriaRequest;
 import baigorriap.auditoriabpm.model.Auditoria;
 import baigorriap.auditoriabpm.model.AuditoriaItemBPM;
+import baigorriap.auditoriabpm.model.AuditoriaItemBPM.EstadoEnum;
 import baigorriap.auditoriabpm.model.EstadisticasAuditoria;
 import baigorriap.auditoriabpm.model.FirmaPatron;
 import baigorriap.auditoriabpm.model.ItemBPM;
@@ -35,13 +43,38 @@ import retrofit2.http.POST;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
-
+/**
+ * Clase que maneja la configuración y creación de la API de Retrofit.
+ */
 public class ApiClient {
+    private static final String TAG = "ApiClient";
     public static final String URL = "http://192.168.100.60:5000/";
     private static MisEndPoints mep;
 
+    /**
+     * Método que devuelve una instancia de la interfaz de la API.
+     * @return Instancia de la interfaz de la API.
+     */
     public static MisEndPoints getEndPoints(){
-        Gson gson = new GsonBuilder().setLenient().create();
+        Gson gson = new GsonBuilder()
+            .setLenient()
+            .registerTypeAdapter(EstadoEnum.class, new JsonDeserializer<EstadoEnum>() {
+                @Override
+                public EstadoEnum deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+                    try {
+                        int value = json.getAsInt();
+                        Log.d(TAG, "Deserializando EstadoEnum desde valor: " + value);
+                        EstadoEnum estado = EstadoEnum.fromValue(value);
+                        Log.d(TAG, "Estado deserializado: " + estado);
+                        return estado;
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error deserializando EstadoEnum: " + e.getMessage());
+                        return null;
+                    }
+                }
+            })
+            .create();
+
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl(URL)
                 .addConverterFactory(GsonConverterFactory.create(gson))
@@ -50,6 +83,9 @@ public class ApiClient {
         return mep;
     }
 
+    /**
+     * Interfaz que define los endpoints de la API.
+     */
     public interface MisEndPoints {
         // Autenticación
         @FormUrlEncoded
@@ -136,6 +172,11 @@ public class ApiClient {
         Call<FirmaPatron> obtenerFirmaPatron(@Header("Authorization") String token, @Path("idOperario") int idOperario);
     }
 
+    /**
+     * Método que guarda el token de autenticación en las preferencias compartidas.
+     * @param token Token de autenticación.
+     * @param context Contexto de la aplicación.
+     */
     public static void guardarToken(String token, Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -143,12 +184,21 @@ public class ApiClient {
         editor.apply();
     }
 
+    /**
+     * Método que lee el token de autenticación desde las preferencias compartidas.
+     * @param context Contexto de la aplicación.
+     * @return Token de autenticación.
+     */
     public static String leerToken(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE);
         String token = sharedPreferences.getString("token", null);
         return token != null ? "Bearer " + token : null;
     }
 
+    /**
+     * Método que elimina el token de autenticación desde las preferencias compartidas.
+     * @param context Contexto de la aplicación.
+     */
     public static void eliminarToken(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
