@@ -2,10 +2,12 @@ package baigorriap.auditoriabpm.ui.excel;
 
 import android.Manifest;
 import android.app.DatePickerDialog;
+import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -20,6 +22,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -28,18 +31,23 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import baigorriap.auditoriabpm.databinding.FragmentExportExcelBinding;
 import baigorriap.auditoriabpm.model.Auditoria;
@@ -47,8 +55,10 @@ import baigorriap.auditoriabpm.model.Actividad;
 import baigorriap.auditoriabpm.model.ItemBPM;
 import baigorriap.auditoriabpm.model.Linea;
 import baigorriap.auditoriabpm.model.Operario;
+import baigorriap.auditoriabpm.model.OperarioSinAuditoria;
 import baigorriap.auditoriabpm.model.Supervisor;
 import baigorriap.auditoriabpm.request.ApiClient;
+import com.opencsv.CSVWriter;
 
 public class ExportExcelFragment extends Fragment {
 
@@ -168,7 +178,7 @@ public class ExportExcelFragment extends Fragment {
     private void checkStoragePermissionAndExport() {
         // En Android 10 (API 29) y superior, no necesitamos permisos para escribir en Downloads
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            exportToCSV(pendingAuditorias);
+            exportToCSV();
             return;
         }
 
@@ -180,7 +190,7 @@ public class ExportExcelFragment extends Fragment {
                 STORAGE_PERMISSION_CODE
             );
         } else {
-            exportToCSV(pendingAuditorias);
+            exportToCSV();
         }
     }
 
@@ -190,7 +200,7 @@ public class ExportExcelFragment extends Fragment {
         if (requestCode == STORAGE_PERMISSION_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 if (pendingAuditorias != null) {
-                    exportToCSV(pendingAuditorias);
+                    exportToCSV();
                 }
             } else {
                 Toast.makeText(requireContext(), 
@@ -200,148 +210,138 @@ public class ExportExcelFragment extends Fragment {
         }
     }
 
-    private void exportToCSV(List<Auditoria> auditorias) {
+    private void exportToCSV() {
+        String timeStamp = String.valueOf(System.currentTimeMillis());
+        String fileName = "auditorias_" + timeStamp + ".csv";
+        File file = new File(requireContext().getExternalFilesDir(null), fileName);
+        CSVWriter writer = null;
+        AtomicInteger procesados = new AtomicInteger(0);
+        AtomicInteger errores = new AtomicInteger(0);
+        AtomicBoolean writerClosed = new AtomicBoolean(false);
+
         try {
-            Log.d(TAG, "Iniciando exportación CSV con " + auditorias.size() + " auditorías");
-            binding.progressBar.setMax(auditorias.size());
-            binding.progressText.setVisibility(View.VISIBLE);
-            binding.progressBar.setVisibility(View.VISIBLE);
-            binding.progressText.setText("Iniciando exportación...");
-            int procesadas = 0;
+            writer = new CSVWriter(new FileWriter(file));
+            final CSVWriter finalWriter = writer;
 
-            String fileName = "auditorias_" + new SimpleDateFormat("dd-MM-yyyy", new Locale("es", "ES")).format(new Date()) + ".html";
-            
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ContentValues values = new ContentValues();
-                values.put(MediaStore.Downloads.DISPLAY_NAME, fileName);
-                values.put(MediaStore.Downloads.MIME_TYPE, "text/html");
-                values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+            // Escribir encabezados
+            String[] encabezados = {"Fecha", "Supervisor", "Operario", "Actividad", "Línea", "Item BPM", "Estado", "Comentario"};
+            writer.writeNext(encabezados);
 
-                ContentResolver resolver = requireContext().getContentResolver();
-                Uri uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+            int totalItems = 0;
+            for (Auditoria auditoria : pendingAuditorias) {
+                totalItems += auditoria.getAuditoriaItems().size();
+            }
+            final int finalTotalItems = totalItems;
 
-                if (uri != null) {
-                    try (OutputStream outputStream = resolver.openOutputStream(uri);
-                         OutputStreamWriter writer = new OutputStreamWriter(outputStream)) {
+            Log.d(TAG, "Total de items a procesar: " + totalItems);
+            CountDownLatch latch = new CountDownLatch(totalItems);
+            Log.d(TAG, "Latch inicializado con " + totalItems + " items");
 
-                        // Escribir encabezado del archivo
-                        writer.write("<html><head><meta charset='UTF-8'></head><body>\n");
-                        writer.write("<h1>REPORTE DE AUDITORÍAS</h1>\n");
-                        writer.write("<p>Fecha de exportación: " + new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", new Locale("es", "ES")).format(new Date()) + "</p>\n");
-                        writer.write("<p>Total de auditorías: " + auditorias.size() + "</p>\n");
+            Log.d(TAG, "Iniciando exportación a " + fileName);
 
-                        // Procesar cada auditoría
-                        for (Auditoria auditoria : auditorias) {
-                            procesadas++;
-                            final int finalProcesadas = procesadas;
-                            requireActivity().runOnUiThread(() -> {
-                                binding.progressBar.setProgress(finalProcesadas);
-                                binding.progressText.setText("Procesando auditoría " + finalProcesadas + " de " + auditorias.size());
-                            });
-
+            for (Auditoria auditoria : pendingAuditorias) {
+                Log.d(TAG, "Procesando auditoría ID: " + auditoria.getIdAuditoria() + " con " + auditoria.getAuditoriaItems().size() + " items");
+                
+                for (AuditoriaItemBPM item : auditoria.getAuditoriaItems()) {
+                    final Auditoria finalAuditoria = auditoria;
+                    
+                    obtenerDescripcionItemBPM(item.getIdItemBPM(), new OnItemBPMCargadoListener() {
+                        @Override
+                        public void onItemCargado(String descripcionItem) {
                             try {
-                                String supervisorNombre = obtenerNombreSupervisor(auditoria.getIdSupervisor());
-                                String lineaDesc = obtenerDescripcionLinea(auditoria.getIdLinea());
-                                List<AuditoriaItemBPM> items = auditoria.getAuditoriaItems();
+                                if (!writerClosed.get()) {
+                                    String[] campos = {
+                                        dateFormatter.format(finalAuditoria.getFecha()),
+                                        escaparCSV(supervisorNombre),
+                                        escaparCSV(obtenerNombreOperario(finalAuditoria.getIdOperario())),
+                                        escaparCSV(obtenerDescripcionActividad(finalAuditoria.getIdActividad())),
+                                        escaparCSV(obtenerDescripcionLinea(finalAuditoria.getIdLinea())),
+                                        escaparCSV(descripcionItem),
+                                        item.getEstado() != null ? item.getEstado().toString() : "No especificado",
+                                        escaparCSV(finalAuditoria.getComentario())
+                                    };
 
-                                // Escribir tabla HTML para esta auditoría
-                                writer.write("<table border='1' style='border-collapse: collapse; width: 100%;'>\n");
-                                
-                                // Encabezado de la auditoría
-                                writer.write("<tr bgcolor='#CCCCCC'><th colspan='2' style='text-align: center;'>AUDITORIA</th></tr>\n");
-                                writer.write(String.format("<tr><td><b>Fecha:</b></td><td>%s</td></tr>\n", auditoria.getFecha()));
-                                writer.write(String.format("<tr><td><b>Supervisor:</b></td><td>%s</td></tr>\n", supervisorNombre));
-                                writer.write(String.format("<tr><td><b>Linea:</b></td><td>%s</td></tr>\n", lineaDesc));
-                                if (auditoria.getComentario() != null && !auditoria.getComentario().isEmpty()) {
-                                    writer.write(String.format("<tr><td><b>Comentario:</b></td><td>%s</td></tr>\n", escaparHTML(auditoria.getComentario())));
-                                }
-                                writer.write("<tr><td colspan='2'>&nbsp;</td></tr>\n"); // Espacio en blanco
-                                
-                                // Encabezados de las columnas de items
-                                writer.write("<tr bgcolor='#EEEEEE'>\n");
-                                writer.write("<th>Item</th>\n");
-                                writer.write("<th>Estado</th>\n");
-                                writer.write("</tr>\n");
-
-                                // Escribir items
-                                for (AuditoriaItemBPM item : items) {
-                                    cargarItemBPM(item.getIdItemBPM(), new OnItemBPMCargadoListener() {
-                                        @Override
-                                        public void onItemCargado(String descripcionItem) {
-                                            try {
-                                                writer.write("<tr>\n");
-                                                writer.write(String.format("<td>%s</td>\n", escaparHTML(descripcionItem)));
-                                                writer.write(String.format("<td>%s</td>\n", escaparHTML(item.getEstado().toString())));
-                                                writer.write("</tr>\n");
-                                                writer.flush();
-                                            } catch (IOException e) {
-                                                Log.e(TAG, "Error escribiendo item", e);
-                                            }
+                                    synchronized (finalWriter) {
+                                        if (!writerClosed.get()) {
+                                            finalWriter.writeNext(campos);
+                                            procesados.incrementAndGet();
                                         }
-
-                                        @Override
-                                        public void onError(String error) {
-                                            Log.e(TAG, "Error cargando item: " + error);
-                                            try {
-                                                writer.write("<tr>\n");
-                                                writer.write("<td>Error al cargar item</td>\n");
-                                                writer.write(String.format("<td>%s</td>\n", escaparHTML(item.getEstado().toString())));
-                                                writer.write("</tr>\n");
-                                                writer.flush();
-                                            } catch (IOException e) {
-                                                Log.e(TAG, "Error escribiendo item con error", e);
-                                            }
-                                        }
-                                    });
+                                    }
                                 }
-
-                                writer.write("</table>\n");
-                                writer.write("<br><br>\n"); // Espacio entre auditorías
-                                writer.flush(); // Asegurar que se escriban los datos
                             } catch (Exception e) {
-                                Log.e(TAG, "Error procesando auditoría " + auditoria.getIdAuditoria(), e);
+                                Log.e(TAG, "Error escribiendo línea", e);
+                                errores.incrementAndGet();
+                            } finally {
+                                latch.countDown();
+                                updateProgress(procesados.get(), finalTotalItems);
+                                checkExportCompletion(latch, finalWriter, writerClosed, procesados.get(), errores.get(), finalTotalItems, file);
                             }
                         }
 
-                        // Finalizar
-                        writer.write("</body></html>\n");
-                        writer.flush();
-                        requireActivity().runOnUiThread(() -> {
-                            binding.progressBar.setVisibility(View.GONE);
-                            binding.progressText.setVisibility(View.GONE);
-                            Toast.makeText(requireContext(), "Archivo exportado exitosamente", Toast.LENGTH_LONG).show();
-                        });
-
-                    } catch (IOException e) {
-                        Log.e(TAG, "Error escribiendo archivo", e);
-                        mostrarError("Error al escribir el archivo: " + e.getMessage());
-                    }
-                } else {
-                    mostrarError("No se pudo crear el archivo");
-                }
-            } else {
-                // Código para Android 9 y anteriores
-                File targetDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-                if (!targetDir.exists()) {
-                    targetDir.mkdirs();
-                }
-
-                File file = new File(targetDir, fileName);
-                try (FileWriter writer = new FileWriter(file)) {
-                    // Mismo código que arriba...
-                    // ... (implementar la misma lógica para versiones anteriores)
-                } catch (IOException e) {
-                    Log.e(TAG, "Error escribiendo archivo", e);
-                    mostrarError("Error al escribir el archivo: " + e.getMessage());
+                        @Override
+                        public void onError(String error) {
+                            Log.e(TAG, "Error al obtener item " + item.getIdItemBPM() + ": " + error);
+                            errores.incrementAndGet();
+                            latch.countDown();
+                            updateProgress(procesados.get(), finalTotalItems);
+                            checkExportCompletion(latch, finalWriter, writerClosed, procesados.get(), errores.get(), finalTotalItems, file);
+                        }
+                    });
                 }
             }
-        } catch (Exception e) {
-            Log.e(TAG, "Error general en exportación", e);
-            mostrarError("Error en la exportación: " + e.getMessage());
+        } catch (IOException e) {
+            Log.e(TAG, "Error al crear archivo CSV", e);
+            if (writer != null && !writerClosed.get()) {
+                try {
+                    writer.close();
+                    writerClosed.set(true);
+                } catch (IOException ex) {
+                    Log.e(TAG, "Error al cerrar writer", ex);
+                }
+            }
+            onExportError("Error al crear archivo CSV");
         }
     }
 
-    private void mostrarError(String mensaje) {
+    private void checkExportCompletion(CountDownLatch latch, CSVWriter writer, AtomicBoolean writerClosed, 
+                                     int procesados, int errores, int total, File file) {
+        if (latch.getCount() == 0 && !writerClosed.get()) {
+            synchronized (writer) {
+                if (!writerClosed.get()) {
+                    try {
+                        writer.close();
+                        writerClosed.set(true);
+                        
+                        requireActivity().runOnUiThread(() -> {
+                            binding.progressBar.setVisibility(View.GONE);
+                            binding.progressText.setVisibility(View.GONE);
+                            
+                            String mensaje = errores > 0 
+                                ? "Exportación completada con " + errores + " errores"
+                                : "Archivo CSV exportado exitosamente";
+                                
+                            Toast.makeText(requireContext(), mensaje, Toast.LENGTH_LONG).show();
+                            
+                            if (errores == 0) {
+                                shareFile(file);
+                            }
+                        });
+                    } catch (IOException e) {
+                        Log.e(TAG, "Error al cerrar writer", e);
+                    }
+                }
+            }
+        }
+    }
+
+    private void updateProgress(int procesados, int total) {
+        requireActivity().runOnUiThread(() -> {
+            binding.progressBar.setProgress(procesados);
+            binding.progressText.setText("Procesando " + procesados + " de " + total + " items");
+        });
+    }
+
+    private void onExportError(String mensaje) {
         requireActivity().runOnUiThread(() -> {
             binding.progressBar.setVisibility(View.GONE);
             binding.progressText.setVisibility(View.GONE);
@@ -349,15 +349,53 @@ public class ExportExcelFragment extends Fragment {
         });
     }
 
-    private String escaparHTML(String texto) {
+    private void shareFile(File file) {
+        try {
+            Uri uri = FileProvider.getUriForFile(
+                requireContext(),
+                requireContext().getApplicationContext().getPackageName() + ".provider",
+                file
+            );
+
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(uri, "text/csv");
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+            try {
+                startActivity(Intent.createChooser(intent, "Abrir archivo CSV con..."));
+            } catch (ActivityNotFoundException e) {
+                Toast.makeText(requireContext(), 
+                    "No se encontró una aplicación para abrir archivos CSV", 
+                    Toast.LENGTH_LONG).show();
+                
+                // Intentar compartir como alternativa
+                Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                shareIntent.setType("text/csv");
+                shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                
+                try {
+                    startActivity(Intent.createChooser(shareIntent, "Compartir archivo CSV"));
+                } catch (ActivityNotFoundException ex) {
+                    Toast.makeText(requireContext(), 
+                        "No se pudo compartir el archivo", 
+                        Toast.LENGTH_LONG).show();
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error al compartir archivo", e);
+            Toast.makeText(requireContext(), 
+                "Error al compartir archivo: " + e.getMessage(), 
+                Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private String escaparCSV(String texto) {
         if (texto == null) return "";
-        // Reemplazar caracteres especiales que pueden causar problemas en HTML
-        texto = texto.replace("&", "&amp;")
-                    .replace("<", "&lt;")
-                    .replace(">", "&gt;")
-                    .replace("\"", "&quot;")
-                    .replace("'", "&#39;");
-        
+        // Si el texto contiene comas, comillas o saltos de línea, encerrarlo en comillas
+        if (texto.contains(",") || texto.contains("\"") || texto.contains("\n")) {
+            return "\"" + texto.replace("\"", "\"\"") + "\"";
+        }
         return texto;
     }
 
@@ -372,7 +410,7 @@ public class ExportExcelFragment extends Fragment {
 
         // Contador para saber cuándo se han completado todas las cargas
         final int[] loadCount = {0};
-        final int TOTAL_LOADS = 3; // actividades, líneas y supervisor
+        final int TOTAL_LOADS = 4; // actividades, líneas, supervisor y operarios
 
         Runnable checkAllLoaded = () -> {
             loadCount[0]++;
@@ -427,7 +465,7 @@ public class ExportExcelFragment extends Fragment {
             }
         });
 
-        // Cargar datos del supervisor actual
+        // Cargar supervisor
         ApiClient.getEndPoints().miPerfil("Bearer " + token).enqueue(new Callback<Supervisor>() {
             @Override
             public void onResponse(Call<Supervisor> call, Response<Supervisor> response) {
@@ -446,76 +484,70 @@ public class ExportExcelFragment extends Fragment {
                 checkAllLoaded.run();
             }
         });
-    }
 
-    private void cargarOperario(int idOperario, OnOperarioCargadoListener listener) {
-        String token = ApiClient.leerToken(requireContext());
-        if (token == null) {
-            listener.onError("No se encontró el token");
-            return;
-        }
-
-        if (operariosCache.containsKey(idOperario)) {
-            listener.onOperarioCargado(operariosCache.get(idOperario));
-            return;
-        }
-
-        ApiClient.getEndPoints().obtenerOperario("Bearer " + token, idOperario).enqueue(new Callback<Operario>() {
+        // Cargar todos los operarios
+        ApiClient.getEndPoints().obtenerOperariosSinAuditorias("Bearer " + token).enqueue(new Callback<List<OperarioSinAuditoria>>() {
             @Override
-            public void onResponse(Call<Operario> call, Response<Operario> response) {
+            public void onResponse(Call<List<OperarioSinAuditoria>> call, Response<List<OperarioSinAuditoria>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    Operario operario = response.body();
-                    String nombreCompleto = operario.getNombre() + " " + operario.getApellido();
-                    operariosCache.put(idOperario, nombreCompleto);
-                    listener.onOperarioCargado(nombreCompleto);
-                } else {
-                    listener.onError("Error al cargar operario: " + response.message());
+                    for (OperarioSinAuditoria operario : response.body()) {
+                        operariosCache.put(operario.getIdOperario(), operario.getNombreCompleto());
+                    }
+                    Log.d(TAG, "Operarios cargados: " + operariosCache.size());
                 }
+                checkAllLoaded.run();
             }
 
             @Override
-            public void onFailure(Call<Operario> call, Throwable t) {
-                Log.e(TAG, "Error al cargar operario", t);
-                listener.onError("Error al cargar operario: " + t.getMessage());
+            public void onFailure(Call<List<OperarioSinAuditoria>> call, Throwable t) {
+                Log.e(TAG, "Error al cargar operarios", t);
+                mostrarError("Error al cargar operarios: " + t.getMessage());
+                checkAllLoaded.run();
             }
         });
     }
 
-    private void cargarItemBPM(int idItemBPM, OnItemBPMCargadoListener listener) {
+    private void obtenerDescripcionItemBPM(int idItemBPM, OnItemBPMCargadoListener listener) {
+        Log.d(TAG, "Obteniendo descripción para item BPM ID: " + idItemBPM);
+        
+        // Primero intentar obtener del cache
+        if (itemsBPMCache.containsKey(idItemBPM)) {
+            String descripcion = itemsBPMCache.get(idItemBPM);
+            Log.d(TAG, "Item BPM ID " + idItemBPM + " encontrado en caché: " + descripcion);
+            listener.onItemCargado(descripcion);
+            return;
+        }
+
+        // Si no está en cache, obtener de la API
         String token = ApiClient.leerToken(requireContext());
         if (token == null) {
-            listener.onError("No se encontró el token");
+            Log.e(TAG, "Token nulo al intentar obtener item BPM ID " + idItemBPM);
+            listener.onItemCargado("Item BPM " + idItemBPM);
             return;
         }
 
-        if (itemsBPMCache.containsKey(idItemBPM)) {
-            listener.onItemCargado(itemsBPMCache.get(idItemBPM));
-            return;
-        }
-
+        Log.d(TAG, "Solicitando item BPM ID " + idItemBPM + " a la API");
         ApiClient.getEndPoints().obtenerItemBPMPorId("Bearer " + token, idItemBPM).enqueue(new Callback<ItemBPM>() {
             @Override
             public void onResponse(Call<ItemBPM> call, Response<ItemBPM> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     ItemBPM item = response.body();
-                    itemsBPMCache.put(idItemBPM, item.getDescripcion());
+                    itemsBPMCache.put(item.getIdItem(), item.getDescripcion());
+                    Log.d(TAG, "Item BPM ID " + idItemBPM + " obtenido de API: " + item.getDescripcion());
                     listener.onItemCargado(item.getDescripcion());
                 } else {
-                    listener.onError("Error al cargar item: " + response.message());
+                    String descripcionPorDefecto = "Item BPM " + idItemBPM;
+                    Log.e(TAG, "Error al obtener item ID " + idItemBPM + ". Código: " + response.code() + ". Error: " + response.errorBody());
+                    listener.onItemCargado(descripcionPorDefecto);
                 }
             }
 
             @Override
             public void onFailure(Call<ItemBPM> call, Throwable t) {
-                Log.e(TAG, "Error al cargar item", t);
-                listener.onError("Error al cargar item: " + t.getMessage());
+                Log.e(TAG, "Error en llamada de item " + idItemBPM, t);
+                listener.onItemCargado("Item BPM " + idItemBPM);
             }
         });
-    }
-
-    private interface OnOperarioCargadoListener {
-        void onOperarioCargado(String nombreOperario);
-        void onError(String error);
     }
 
     private interface OnItemBPMCargadoListener {
@@ -523,12 +555,25 @@ public class ExportExcelFragment extends Fragment {
         void onError(String error);
     }
 
-    private String obtenerNombreSupervisor(int idSupervisor) {
-        return supervisorNombre != null ? supervisorNombre : "Supervisor " + idSupervisor;
+    private String obtenerNombreOperario(int idOperario) {
+        // Intentar obtener del cache
+        String nombre = operariosCache.get(idOperario);
+        if (nombre != null) {
+            return nombre;
+        }
+        return "Operario " + idOperario;
     }
 
-    private void obtenerNombreOperario(int idOperario, OnOperarioCargadoListener listener) {
-        cargarOperario(idOperario, listener);
+    private void mostrarError(String mensaje) {
+        requireActivity().runOnUiThread(() -> {
+            binding.progressBar.setVisibility(View.GONE);
+            binding.progressText.setVisibility(View.GONE);
+            Toast.makeText(requireContext(), mensaje, Toast.LENGTH_LONG).show();
+        });
+    }
+
+    private String obtenerNombreSupervisor(int idSupervisor) {
+        return supervisorNombre != null ? supervisorNombre : "Supervisor " + idSupervisor;
     }
 
     private String obtenerDescripcionActividad(int idActividad) {
@@ -537,10 +582,6 @@ public class ExportExcelFragment extends Fragment {
 
     private String obtenerDescripcionLinea(int idLinea) {
         return lineasCache.getOrDefault(idLinea, "Línea " + idLinea);
-    }
-
-    private void obtenerDescripcionItem(int idItemBPM, OnItemBPMCargadoListener listener) {
-        cargarItemBPM(idItemBPM, listener);
     }
 
     @Override
