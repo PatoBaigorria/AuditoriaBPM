@@ -239,7 +239,10 @@ public class ExportExcelFragment extends Fragment {
         AtomicBoolean writerClosed = new AtomicBoolean(false);
 
         try {
-            writer = new CSVWriter(new FileWriter(file));
+            writer = new CSVWriter(new OutputStreamWriter(
+                new FileOutputStream(file), 
+                "Windows-1252"
+            ));
             final CSVWriter finalWriter = writer;
 
             // Escribir encabezados
