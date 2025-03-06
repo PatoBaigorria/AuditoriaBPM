@@ -41,10 +41,12 @@ import retrofit2.http.Path;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -225,6 +227,12 @@ public class ExportExcelFragment extends Fragment {
         File file = new File(requireContext().getCacheDir(), fileName);
         Log.d(TAG, "Creando archivo CSV en: " + file.getAbsolutePath());
         
+        exportarAuditorias(pendingAuditorias, file);
+    }
+
+    private void exportarAuditorias(List<Auditoria> pendingAuditorias, File file) {
+        Log.d(TAG, "Iniciando exportación de " + pendingAuditorias.size() + " auditorías");
+        
         CSVWriter writer = null;
         AtomicInteger procesados = new AtomicInteger(0);
         AtomicInteger errores = new AtomicInteger(0);
@@ -248,7 +256,7 @@ public class ExportExcelFragment extends Fragment {
             CountDownLatch latch = new CountDownLatch(totalItems);
             Log.d(TAG, "Latch inicializado con " + totalItems + " items");
 
-            Log.d(TAG, "Iniciando exportación a " + fileName);
+            Log.d(TAG, "Iniciando exportación a " + file.getName());
 
             for (Auditoria auditoria : pendingAuditorias) {
                 Log.d(TAG, "Procesando auditoría ID: " + auditoria.getIdAuditoria() + " con " + auditoria.getAuditoriaItems().size() + " items");
@@ -288,6 +296,500 @@ public class ExportExcelFragment extends Fragment {
             }
             onExportError("Error al crear archivo CSV");
         }
+    }
+
+    private void procesarItem(CSVWriter writer, Auditoria auditoria, AuditoriaItemBPM item, CountDownLatch latch) {
+        Log.d(TAG, "Procesando item BPM: " + item.getIdItemBPM() + " con estado: " + item.getEstado());
+        SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+
+        AtomicBoolean supervisorCargado = new AtomicBoolean(false);
+        AtomicBoolean operarioCargado = new AtomicBoolean(false);
+        AtomicBoolean itemBPMCargado = new AtomicBoolean(false);
+
+        String[] nombreSupervisor = {""};
+        String[] nombreOperario = {""};
+        String[] descripcionItem = {""};
+
+        Runnable checkAndWrite = () -> {
+            if (supervisorCargado.get() && operarioCargado.get() && itemBPMCargado.get()) {
+                String estadoLegible = obtenerEstadoLegible(item.getEstado());
+                Log.d(TAG, "Estado legible para item " + item.getIdItemBPM() + ": " + estadoLegible);
+                
+                String[] campos = {
+                    dateFormatter.format(auditoria.getFecha()),
+                    nombreSupervisor[0],
+                    nombreOperario[0],
+                    obtenerDescripcionActividad(auditoria.getIdActividad()),
+                    obtenerDescripcionLinea(auditoria.getIdLinea()),
+                    descripcionItem[0],
+                    estadoLegible,
+                    auditoria.getComentario()
+                };
+                synchronized (writer) {
+                    writer.writeNext(campos);
+                }
+                latch.countDown();
+            }
+        };
+
+        obtenerDescripcionSupervisor(auditoria.getIdSupervisor(), new OnSupervisorCargadoListener() {
+            @Override
+            public void onSupervisorCargado(String nombre) {
+                nombreSupervisor[0] = nombre;
+                supervisorCargado.set(true);
+                checkAndWrite.run();
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Error cargando supervisor: " + error);
+                nombreSupervisor[0] = "Supervisor " + auditoria.getIdSupervisor();
+                supervisorCargado.set(true);
+                checkAndWrite.run();
+            }
+        });
+
+        obtenerDescripcionOperario(auditoria.getIdOperario(), new OnOperarioCargadoListener() {
+            @Override
+            public void onOperarioCargado(String nombre) {
+                nombreOperario[0] = nombre;
+                operarioCargado.set(true);
+                checkAndWrite.run();
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Error cargando operario: " + error);
+                nombreOperario[0] = "Operario " + auditoria.getIdOperario();
+                operarioCargado.set(true);
+                checkAndWrite.run();
+            }
+        });
+
+        obtenerDescripcionItemBPM(item.getIdItemBPM(), new OnItemBPMCargadoListener() {
+            @Override
+            public void onItemCargado(String descripcion) {
+                descripcionItem[0] = descripcion;
+                itemBPMCargado.set(true);
+                checkAndWrite.run();
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Error cargando item BPM: " + error);
+                // Intentar obtener del cache primero
+                if (itemsBPMCache.containsKey(item.getIdItemBPM())) {
+                    descripcionItem[0] = itemsBPMCache.get(item.getIdItemBPM());
+                } else {
+                    descripcionItem[0] = "Item sin descripción";
+                }
+                itemBPMCargado.set(true);
+                checkAndWrite.run();
+            }
+        });
+    }
+
+    private String obtenerEstadoLegible(AuditoriaItemBPM.EstadoEnum estado) {
+        switch (estado) {
+            case OK:
+                return "OK";
+            case NOOK:
+                return "NO OK";
+            case NA:
+                return "N/A";
+            default:
+                return estado.toString();
+        }
+    }
+
+    private String obtenerDescripcionLinea(int idLinea) {
+        return lineasCache.getOrDefault(idLinea, "Línea " + idLinea);
+    }
+
+    private String obtenerDescripcionActividad(int idActividad) {
+        return actividadesCache.getOrDefault(idActividad, "Actividad " + idActividad);
+    }
+
+    private void updateProgress(int procesados, int total) {
+        requireActivity().runOnUiThread(() -> {
+            binding.progressBar.setProgress(procesados);
+            binding.progressText.setText("Procesando " + procesados + " de " + total + " items");
+        });
+    }
+
+    private void onExportError(String mensaje) {
+        requireActivity().runOnUiThread(() -> {
+            binding.progressBar.setVisibility(View.GONE);
+            binding.progressText.setVisibility(View.GONE);
+            Toast.makeText(requireContext(), mensaje, Toast.LENGTH_LONG).show();
+        });
+    }
+
+    private String escaparCSV(String texto) {
+        if (texto == null) return "";
+        // Si el texto contiene comas, comillas o saltos de línea, encerrarlo en comillas
+        if (texto.contains(",") || texto.contains("\"") || texto.contains("\n")) {
+            return "\"" + texto.replace("\"", "\"\"") + "\"";
+        }
+        return texto;
+    }
+
+    private void cargarDatosNecesarios() {
+        String token = ApiClient.leerToken(requireContext());
+        if (token == null) {
+            Log.e(TAG, "No se pudo obtener el token de autenticación");
+            return;
+        }
+        Log.d(TAG, "Token obtenido correctamente: " + token);
+
+        binding.progressBar.setVisibility(View.VISIBLE);
+        binding.progressText.setVisibility(View.VISIBLE);
+        binding.progressText.setText("Cargando datos necesarios...");
+        binding.btnExport.setEnabled(false);
+
+        // Contador para saber cuándo se han completado todas las cargas
+        final int[] loadCount = {0};
+        final int TOTAL_LOADS = 5; // actividades, líneas, operarios, supervisores y items BPM
+
+        Runnable checkAllLoaded = () -> {
+            loadCount[0]++;
+            if (loadCount[0] == TOTAL_LOADS) {
+                requireActivity().runOnUiThread(() -> {
+                    binding.progressBar.setVisibility(View.GONE);
+                    binding.progressText.setVisibility(View.GONE);
+                    binding.btnExport.setEnabled(true);
+                });
+            }
+        };
+
+        // Cargar todos los supervisores
+        ApiClient.getEndPoints().obtenerTodosLosSupervisores(token).enqueue(new Callback<List<Supervisor>>() {
+            @Override
+            public void onResponse(Call<List<Supervisor>> call, Response<List<Supervisor>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    for (Supervisor supervisor : response.body()) {
+                        String nombreCompleto = supervisor.getApellido() + ", " + supervisor.getNombre();
+                        supervisoresCache.put(supervisor.getIdSupervisor(), nombreCompleto);
+                    }
+                    Log.d(TAG, "Supervisores cargados: " + supervisoresCache.size());
+                }
+                checkAllLoaded.run();
+            }
+
+            @Override
+            public void onFailure(Call<List<Supervisor>> call, Throwable t) {
+                Log.e(TAG, "Error al cargar supervisores", t);
+                mostrarError("Error al cargar supervisores: " + t.getMessage());
+                checkAllLoaded.run();
+            }
+        });
+
+        // Cargar todos los operarios
+        ApiClient.getEndPoints().obtenerTodosLosOperarios(token).enqueue(new Callback<List<Operario>>() {
+            @Override
+            public void onResponse(Call<List<Operario>> call, Response<List<Operario>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    for (Operario operario : response.body()) {
+                        operariosCache.put(operario.getIdOperario(), operario.getApellido() + ", " + operario.getNombre());
+                    }
+                    Log.d(TAG, "Operarios cargados: " + operariosCache.size());
+                }
+                checkAllLoaded.run();
+            }
+
+            @Override
+            public void onFailure(Call<List<Operario>> call, Throwable t) {
+                Log.e(TAG, "Error al cargar operarios", t);
+                mostrarError("Error al cargar operarios: " + t.getMessage());
+                checkAllLoaded.run();
+            }
+        });
+
+        // Cargar todos los ItemsBPM
+        Log.d(TAG, "Iniciando carga de todos los ItemsBPM");
+        Call<List<ItemBPM>> itemsCall = ApiClient.getEndPoints().obtenerTodosLosItemsBPM(token);
+        Log.d(TAG, "URL a llamar: " + itemsCall.request().url());
+        
+        itemsCall.enqueue(new Callback<List<ItemBPM>>() {
+            @Override
+            public void onResponse(Call<List<ItemBPM>> call, Response<List<ItemBPM>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<ItemBPM> items = response.body();
+                    Log.d(TAG, "Respuesta exitosa al cargar ItemsBPM. Items recibidos: " + items.size());
+                    
+                    for (ItemBPM item : items) {
+                        int idItem = item.getIdItem();
+                        String descripcion = item.getDescripcion();
+                        Log.d(TAG, String.format("ItemBPM recibido - ID: %d, Descripción: '%s'", idItem, descripcion));
+                        
+                        if (descripcion != null && !descripcion.trim().isEmpty()) {
+                            itemsBPMCache.put(idItem, descripcion);
+                            Log.d(TAG, "Guardando en cache - ID: " + idItem + ", Descripción: '" + descripcion + "'");
+                        } else {
+                            Log.w(TAG, "ItemBPM con ID " + idItem + " tiene descripción nula o vacía");
+                        }
+                    }
+                    Log.d(TAG, "Total de ItemsBPM en cache: " + itemsBPMCache.size());
+                    Log.d(TAG, "Contenido del cache: " + itemsBPMCache);
+                } else {
+                    Log.e(TAG, "Error al cargar ItemsBPM. Código: " + response.code());
+                    try {
+                        if (response.errorBody() != null) {
+                            String errorBody = response.errorBody().string();
+                            Log.e(TAG, "Error del servidor: " + errorBody);
+                        }
+                    } catch (IOException e) {
+                        Log.e(TAG, "Error al leer la respuesta de error", e);
+                    }
+                }
+                checkAllLoaded.run();
+            }
+
+            @Override
+            public void onFailure(Call<List<ItemBPM>> call, Throwable t) {
+                Log.e(TAG, "Error de red al cargar ItemsBPM: " + t.getMessage(), t);
+                checkAllLoaded.run();
+            }
+        });
+
+        // Cargar actividades
+        ApiClient.getEndPoints().obtenerTodasLasActividades(token).enqueue(new Callback<List<Actividad>>() {
+            @Override
+            public void onResponse(Call<List<Actividad>> call, Response<List<Actividad>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    for (Actividad actividad : response.body()) {
+                        actividadesCache.put(actividad.getIdActividad(), actividad.getDescripcion());
+                    }
+                    Log.d(TAG, "Actividades cargadas: " + actividadesCache.size());
+                }
+                checkAllLoaded.run();
+            }
+
+            @Override
+            public void onFailure(Call<List<Actividad>> call, Throwable t) {
+                Log.e(TAG, "Error al cargar actividades", t);
+                mostrarError("Error al cargar actividades: " + t.getMessage());
+                checkAllLoaded.run();
+            }
+        });
+
+        // Cargar líneas
+        ApiClient.getEndPoints().obtenerTodasLasLineas(token).enqueue(new Callback<List<Linea>>() {
+            @Override
+            public void onResponse(Call<List<Linea>> call, Response<List<Linea>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    for (Linea linea : response.body()) {
+                        lineasCache.put(linea.getIdLinea(), linea.getDescripcion());
+                    }
+                    Log.d(TAG, "Líneas cargadas: " + lineasCache.size());
+                }
+                checkAllLoaded.run();
+            }
+
+            @Override
+            public void onFailure(Call<List<Linea>> call, Throwable t) {
+                Log.e(TAG, "Error al cargar líneas", t);
+                mostrarError("Error al cargar líneas: " + t.getMessage());
+                checkAllLoaded.run();
+            }
+        });
+    }
+
+    private void obtenerDescripcionItemBPM(int idItemBPM, final OnItemBPMCargadoListener listener) {
+        Log.d(TAG, "Intentando obtener descripción para ItemBPM " + idItemBPM);
+        
+        if (idItemBPM <= 0) {
+            Log.w(TAG, "ID ItemBPM inválido: " + idItemBPM);
+            listener.onItemCargado("No especificado");
+            return;
+        }
+
+        // Primero intentar obtener del cache
+        if (itemsBPMCache.containsKey(idItemBPM)) {
+            String descripcionCache = itemsBPMCache.get(idItemBPM);
+            Log.d(TAG, "ItemBPM " + idItemBPM + " encontrado en cache. Descripción: '" + descripcionCache + "'");
+            listener.onItemCargado(descripcionCache);
+            return;
+        }
+        Log.d(TAG, "ItemBPM " + idItemBPM + " no encontrado en cache. Cache actual: " + itemsBPMCache);
+
+        String token = ApiClient.leerToken(requireContext());
+        if (token == null) {
+            Log.e(TAG, "Token no disponible para ItemBPM " + idItemBPM);
+            listener.onItemCargado("Item " + idItemBPM);
+            return;
+        }
+
+        Log.d(TAG, "Realizando llamada API para ItemBPM " + idItemBPM);
+        Call<ItemBPM> call = ApiClient.getEndPoints().obtenerItemBPMPorId(token, idItemBPM);
+        Log.d(TAG, "URL a llamar: " + call.request().url());
+        
+        call.enqueue(new Callback<ItemBPM>() {
+            @Override
+            public void onResponse(Call<ItemBPM> call, Response<ItemBPM> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ItemBPM item = response.body();
+                    String descripcion = item.getDescripcion();
+                    Log.d(TAG, String.format("ItemBPM %d obtenido de API. Descripción: '%s'", idItemBPM, descripcion));
+                    
+                    if (descripcion != null && !descripcion.trim().isEmpty()) {
+                        Log.d(TAG, "Guardando en cache ItemBPM " + idItemBPM + ": '" + descripcion + "'");
+                        itemsBPMCache.put(idItemBPM, descripcion);
+                        listener.onItemCargado(descripcion);
+                    } else {
+                        Log.w(TAG, "ItemBPM " + idItemBPM + " tiene descripción nula o vacía");
+                        listener.onItemCargado("Item " + idItemBPM);
+                    }
+                } else {
+                    int code = response.code();
+                    String errorBody = "";
+                    try {
+                        if (response.errorBody() != null) {
+                            errorBody = response.errorBody().string();
+                        }
+                    } catch (IOException e) {
+                        Log.e(TAG, "Error al leer el cuerpo del error", e);
+                    }
+                    Log.e(TAG, String.format("Error HTTP al obtener ItemBPM %d. Código: %d, Error: %s", 
+                        idItemBPM, code, errorBody));
+                    listener.onItemCargado("Item " + idItemBPM);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ItemBPM> call, Throwable t) {
+                Log.e(TAG, "Error de red al obtener ItemBPM " + idItemBPM, t);
+                Log.e(TAG, "URL que falló: " + call.request().url());
+                listener.onItemCargado("Item " + idItemBPM);
+            }
+        });
+    }
+
+    private void obtenerDescripcionOperario(int idOperario, final OnOperarioCargadoListener listener) {
+        if (idOperario <= 0) {
+            listener.onOperarioCargado("No especificado");
+            return;
+        }
+
+        String token = ApiClient.leerToken(requireContext());
+        if (token == null) {
+            listener.onOperarioCargado("Operario " + idOperario);
+            return;
+        }
+
+        // Primero intentar obtener del cache de operarios
+        if (operariosCache.containsKey(idOperario)) {
+            listener.onOperarioCargado(operariosCache.get(idOperario));
+            return;
+        }
+
+        // Obtener todos los operarios si el cache está vacío
+        if (operariosCache.isEmpty()) {
+            ApiClient.getEndPoints().obtenerTodosLosOperarios(token).enqueue(new Callback<List<Operario>>() {
+                @Override
+                public void onResponse(Call<List<Operario>> call, Response<List<Operario>> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        for (Operario op : response.body()) {
+                            String nombreCompleto = op.getApellido() + ", " + op.getNombre();
+                            operariosCache.put(op.getIdOperario(), nombreCompleto);
+                        }
+                        // Ahora que tenemos el cache actualizado, intentar obtener el operario de nuevo
+                        if (operariosCache.containsKey(idOperario)) {
+                            listener.onOperarioCargado(operariosCache.get(idOperario));
+                        } else {
+                            listener.onOperarioCargado("Operario " + idOperario);
+                        }
+                    } else {
+                        listener.onOperarioCargado("Operario " + idOperario);
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<List<Operario>> call, Throwable t) {
+                    listener.onOperarioCargado("Operario " + idOperario);
+                }
+            });
+        } else {
+            // Si el operario no está en el cache y el cache no está vacío, significa que no existe
+            listener.onOperarioCargado("Operario " + idOperario);
+        }
+    }
+
+    private void obtenerDescripcionSupervisor(int idSupervisor, final OnSupervisorCargadoListener listener) {
+        if (idSupervisor <= 0) {
+            listener.onSupervisorCargado("No especificado");
+            return;
+        }
+
+        String token = ApiClient.leerToken(requireContext());
+        if (token == null) {
+            listener.onSupervisorCargado("Supervisor " + idSupervisor);
+            return;
+        }
+
+        // Primero intentar obtener del cache
+        if (supervisoresCache.containsKey(idSupervisor)) {
+            listener.onSupervisorCargado(supervisoresCache.get(idSupervisor));
+            return;
+        }
+
+        // Si el supervisor no está en el cache, obtenerlo individualmente
+        ApiClient.getEndPoints().obtenerSupervisor(token, idSupervisor).enqueue(new Callback<Supervisor>() {
+            @Override
+            public void onResponse(Call<Supervisor> call, Response<Supervisor> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    Supervisor supervisor = response.body();
+                    String nombreCompleto = supervisor.getApellido() + ", " + supervisor.getNombre();
+                    supervisoresCache.put(idSupervisor, nombreCompleto);
+                    listener.onSupervisorCargado(nombreCompleto);
+                } else {
+                    listener.onSupervisorCargado("Supervisor " + idSupervisor);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Supervisor> call, Throwable t) {
+                Log.e(TAG, "Error al obtener supervisor: " + t.getMessage());
+                listener.onSupervisorCargado("Supervisor " + idSupervisor);
+            }
+        });
+    }
+
+    private interface OnItemBPMCargadoListener {
+        void onItemCargado(String descripcionItem);
+        void onError(String error);
+    }
+
+    private interface OnOperarioCargadoListener {
+        void onOperarioCargado(String nombreOperario);
+        void onError(String error);
+    }
+
+    private interface OnSupervisorCargadoListener {
+        void onSupervisorCargado(String nombreSupervisor);
+        void onError(String error);
+    }
+
+    private String obtenerNombreOperario(int idOperario) {
+        // Intentar obtener del cache
+        String nombre = operariosCache.get(idOperario);
+        if (nombre != null) {
+            return nombre;
+        }
+        return "Operario " + idOperario;
+    }
+
+    private void mostrarError(String mensaje) {
+        requireActivity().runOnUiThread(() -> {
+            binding.progressBar.setVisibility(View.GONE);
+            binding.progressText.setVisibility(View.GONE);
+            Toast.makeText(requireContext(), mensaje, Toast.LENGTH_LONG).show();
+        });
+    }
+
+    private String obtenerNombreCompletoSupervisor(Supervisor supervisor) {
+        if (supervisor == null) return "No especificado";
+        return supervisor.getApellido() + ", " + supervisor.getNombre();
     }
 
     private void checkExportCompletion(CountDownLatch latch, CSVWriter writer, AtomicBoolean writerClosed, 
@@ -382,463 +884,6 @@ public class ExportExcelFragment extends Fragment {
                 "Error al compartir el archivo: " + e.getMessage(),
                 Toast.LENGTH_LONG).show();
         }
-    }
-
-    private void procesarItem(CSVWriter writer, Auditoria auditoria, AuditoriaItemBPM item, CountDownLatch latch) {
-        Log.d(TAG, "Procesando item BPM: " + item.getIdItemBPM() + " con estado: " + item.getEstado());
-        SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault());
-
-        AtomicBoolean supervisorCargado = new AtomicBoolean(false);
-        AtomicBoolean operarioCargado = new AtomicBoolean(false);
-        AtomicBoolean itemBPMCargado = new AtomicBoolean(false);
-
-        final String[] nombreSupervisor = {null};
-        final String[] nombreOperario = {null};
-        final String[] descripcionItem = {null};
-
-        Runnable checkAndWrite = () -> {
-            if (supervisorCargado.get() && operarioCargado.get() && itemBPMCargado.get()) {
-                String estadoLegible = obtenerEstadoLegible(item);
-                Log.d(TAG, "Estado legible para item " + item.getIdItemBPM() + ": " + estadoLegible);
-                
-                String[] campos = {
-                    dateFormatter.format(auditoria.getFecha()),
-                    escaparCSV(nombreSupervisor[0]),
-                    escaparCSV(nombreOperario[0]),
-                    escaparCSV(obtenerDescripcionActividad(auditoria.getIdActividad())),
-                    escaparCSV(obtenerDescripcionLinea(auditoria.getIdLinea())),
-                    escaparCSV(descripcionItem[0]),
-                    estadoLegible,
-                    escaparCSV(auditoria.getComentario())
-                };
-                synchronized (writer) {
-                    writer.writeNext(campos);
-                }
-                latch.countDown();
-            }
-        };
-
-        obtenerDescripcionSupervisor(auditoria.getIdSupervisor(), new OnSupervisorCargadoListener() {
-            @Override
-            public void onSupervisorCargado(String nombre) {
-                nombreSupervisor[0] = nombre;
-                supervisorCargado.set(true);
-                checkAndWrite.run();
-            }
-
-            @Override
-            public void onError(String error) {
-                Log.e(TAG, "Error cargando supervisor: " + error);
-                nombreSupervisor[0] = "Supervisor " + auditoria.getIdSupervisor();
-                supervisorCargado.set(true);
-                checkAndWrite.run();
-            }
-        });
-
-        obtenerDescripcionOperario(auditoria.getIdOperario(), new OnOperarioCargadoListener() {
-            @Override
-            public void onOperarioCargado(String nombre) {
-                nombreOperario[0] = nombre;
-                operarioCargado.set(true);
-                checkAndWrite.run();
-            }
-
-            @Override
-            public void onError(String error) {
-                Log.e(TAG, "Error cargando operario: " + error);
-                nombreOperario[0] = "Operario " + auditoria.getIdOperario();
-                operarioCargado.set(true);
-                checkAndWrite.run();
-            }
-        });
-
-        obtenerDescripcionItemBPM(item.getIdItemBPM(), new OnItemBPMCargadoListener() {
-            @Override
-            public void onItemCargado(String descripcion) {
-                descripcionItem[0] = descripcion;
-                itemBPMCargado.set(true);
-                checkAndWrite.run();
-            }
-
-            @Override
-            public void onError(String error) {
-                Log.e(TAG, "Error cargando item BPM: " + error);
-                // Intentar obtener del cache primero
-                if (itemsBPMCache.containsKey(item.getIdItemBPM())) {
-                    descripcionItem[0] = itemsBPMCache.get(item.getIdItemBPM());
-                } else {
-                    descripcionItem[0] = "Item sin descripción";
-                }
-                itemBPMCargado.set(true);
-                checkAndWrite.run();
-            }
-        });
-    }
-
-    private String obtenerEstadoLegible(AuditoriaItemBPM item) {
-        if (item.getEstado() == null) {
-            Log.d(TAG, "Estado nulo para item " + item.getIdItemBPM());
-            return "N/A";
-        }
-        
-        EstadoEnum estado = item.getEstado();
-        Log.d(TAG, "Obteniendo estado legible para item " + item.getIdItemBPM() + ". Estado enum: " + estado);
-        
-        switch (estado) {
-            case OK:
-                return "OK";
-            case NOOK:
-                return "NO OK";
-            case NA:
-                return "N/A";
-            default:
-                Log.w(TAG, "Estado no reconocido para item " + item.getIdItemBPM() + ": " + estado);
-                return "No especificado";
-        }
-    }
-
-    private void updateProgress(int procesados, int total) {
-        requireActivity().runOnUiThread(() -> {
-            binding.progressBar.setProgress(procesados);
-            binding.progressText.setText("Procesando " + procesados + " de " + total + " items");
-        });
-    }
-
-    private void onExportError(String mensaje) {
-        requireActivity().runOnUiThread(() -> {
-            binding.progressBar.setVisibility(View.GONE);
-            binding.progressText.setVisibility(View.GONE);
-            Toast.makeText(requireContext(), mensaje, Toast.LENGTH_LONG).show();
-        });
-    }
-
-    private String escaparCSV(String texto) {
-        if (texto == null) return "";
-        // Si el texto contiene comas, comillas o saltos de línea, encerrarlo en comillas
-        if (texto.contains(",") || texto.contains("\"") || texto.contains("\n")) {
-            return "\"" + texto.replace("\"", "\"\"") + "\"";
-        }
-        return texto;
-    }
-
-    private void cargarDatosNecesarios() {
-        String token = ApiClient.leerToken(requireContext());
-        if (token == null) {
-            Log.e(TAG, "No se pudo obtener el token de autenticación");
-            return;
-        }
-        Log.d(TAG, "Token obtenido correctamente: " + token);
-
-        binding.progressBar.setVisibility(View.VISIBLE);
-        binding.progressText.setVisibility(View.VISIBLE);
-        binding.progressText.setText("Cargando datos necesarios...");
-        binding.btnExport.setEnabled(false);
-
-        // Contador para saber cuándo se han completado todas las cargas
-        final int[] loadCount = {0};
-        final int TOTAL_LOADS = 4; // actividades, líneas, operarios y items BPM
-
-        Runnable checkAllLoaded = () -> {
-            loadCount[0]++;
-            if (loadCount[0] == TOTAL_LOADS) {
-                requireActivity().runOnUiThread(() -> {
-                    binding.progressBar.setVisibility(View.GONE);
-                    binding.progressText.setVisibility(View.GONE);
-                    binding.btnExport.setEnabled(true);
-                });
-            }
-        };
-
-        // Cargar todos los ItemsBPM
-        Log.d(TAG, "Iniciando carga de todos los ItemsBPM");
-        Call<List<ItemBPM>> itemsCall = ApiClient.getEndPoints().obtenerTodosLosItemsBPM(token);
-        Log.d(TAG, "URL a llamar: " + itemsCall.request().url());
-        
-        itemsCall.enqueue(new Callback<List<ItemBPM>>() {
-            @Override
-            public void onResponse(Call<List<ItemBPM>> call, Response<List<ItemBPM>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    List<ItemBPM> items = response.body();
-                    Log.d(TAG, "Respuesta exitosa al cargar ItemsBPM. Items recibidos: " + items.size());
-                    
-                    for (ItemBPM item : items) {
-                        int idItem = item.getIdItem();
-                        String descripcion = item.getDescripcion();
-                        Log.d(TAG, String.format("ItemBPM recibido - ID: %d, Descripción: '%s'", idItem, descripcion));
-                        
-                        if (descripcion != null && !descripcion.trim().isEmpty()) {
-                            itemsBPMCache.put(idItem, descripcion);
-                            Log.d(TAG, "Guardando en cache - ID: " + idItem + ", Descripción: '" + descripcion + "'");
-                        } else {
-                            Log.w(TAG, "ItemBPM con ID " + idItem + " tiene descripción nula o vacía");
-                        }
-                    }
-                    Log.d(TAG, "Total de ItemsBPM en cache: " + itemsBPMCache.size());
-                    Log.d(TAG, "Contenido del cache: " + itemsBPMCache);
-                } else {
-                    Log.e(TAG, "Error al cargar ItemsBPM. Código: " + response.code());
-                    try {
-                        if (response.errorBody() != null) {
-                            String errorBody = response.errorBody().string();
-                            Log.e(TAG, "Error del servidor: " + errorBody);
-                        }
-                    } catch (IOException e) {
-                        Log.e(TAG, "Error al leer la respuesta de error", e);
-                    }
-                }
-                checkAllLoaded.run();
-            }
-
-            @Override
-            public void onFailure(Call<List<ItemBPM>> call, Throwable t) {
-                Log.e(TAG, "Error de red al cargar ItemsBPM: " + t.getMessage(), t);
-                checkAllLoaded.run();
-            }
-        });
-
-        // Cargar actividades
-        ApiClient.getEndPoints().obtenerTodasLasActividades(token).enqueue(new Callback<List<Actividad>>() {
-            @Override
-            public void onResponse(Call<List<Actividad>> call, Response<List<Actividad>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    for (Actividad actividad : response.body()) {
-                        actividadesCache.put(actividad.getIdActividad(), actividad.getDescripcion());
-                    }
-                    Log.d(TAG, "Actividades cargadas: " + actividadesCache.size());
-                }
-                checkAllLoaded.run();
-            }
-
-            @Override
-            public void onFailure(Call<List<Actividad>> call, Throwable t) {
-                Log.e(TAG, "Error al cargar actividades", t);
-                mostrarError("Error al cargar actividades: " + t.getMessage());
-                checkAllLoaded.run();
-            }
-        });
-
-        // Cargar todos los operarios
-        ApiClient.getEndPoints().obtenerOperariosSinAuditorias(token).enqueue(new Callback<List<OperarioSinAuditoria>>() {
-            @Override
-            public void onResponse(Call<List<OperarioSinAuditoria>> call, Response<List<OperarioSinAuditoria>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    for (OperarioSinAuditoria operario : response.body()) {
-                        operariosCache.put(operario.getIdOperario(), operario.getNombreCompleto());
-                    }
-                    Log.d(TAG, "Operarios cargados: " + operariosCache.size());
-                }
-                checkAllLoaded.run();
-            }
-
-            @Override
-            public void onFailure(Call<List<OperarioSinAuditoria>> call, Throwable t) {
-                Log.e(TAG, "Error al cargar operarios", t);
-                mostrarError("Error al cargar operarios: " + t.getMessage());
-                checkAllLoaded.run();
-            }
-        });
-    }
-
-    private void obtenerDescripcionItemBPM(int idItemBPM, final OnItemBPMCargadoListener listener) {
-        Log.d(TAG, "Intentando obtener descripción para ItemBPM " + idItemBPM);
-        
-        if (idItemBPM <= 0) {
-            Log.w(TAG, "ID ItemBPM inválido: " + idItemBPM);
-            listener.onItemCargado("No especificado");
-            return;
-        }
-
-        // Primero intentar obtener del cache
-        if (itemsBPMCache.containsKey(idItemBPM)) {
-            String descripcionCache = itemsBPMCache.get(idItemBPM);
-            Log.d(TAG, "ItemBPM " + idItemBPM + " encontrado en cache. Descripción: '" + descripcionCache + "'");
-            listener.onItemCargado(descripcionCache);
-            return;
-        }
-        Log.d(TAG, "ItemBPM " + idItemBPM + " no encontrado en cache. Cache actual: " + itemsBPMCache);
-
-        String token = ApiClient.leerToken(requireContext());
-        if (token == null) {
-            Log.e(TAG, "Token no disponible para ItemBPM " + idItemBPM);
-            listener.onItemCargado("Item " + idItemBPM);
-            return;
-        }
-
-        Log.d(TAG, "Realizando llamada API para ItemBPM " + idItemBPM);
-        Call<ItemBPM> call = ApiClient.getEndPoints().obtenerItemBPMPorId(token, idItemBPM);
-        Log.d(TAG, "URL a llamar: " + call.request().url());
-        
-        call.enqueue(new Callback<ItemBPM>() {
-            @Override
-            public void onResponse(Call<ItemBPM> call, Response<ItemBPM> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    ItemBPM item = response.body();
-                    String descripcion = item.getDescripcion();
-                    Log.d(TAG, String.format("ItemBPM %d obtenido de API. Descripción: '%s'", idItemBPM, descripcion));
-                    
-                    if (descripcion != null && !descripcion.trim().isEmpty()) {
-                        Log.d(TAG, "Guardando en cache ItemBPM " + idItemBPM + ": '" + descripcion + "'");
-                        itemsBPMCache.put(idItemBPM, descripcion);
-                        listener.onItemCargado(descripcion);
-                    } else {
-                        Log.w(TAG, "ItemBPM " + idItemBPM + " tiene descripción nula o vacía");
-                        listener.onItemCargado("Item " + idItemBPM);
-                    }
-                } else {
-                    int code = response.code();
-                    String errorBody = "";
-                    try {
-                        if (response.errorBody() != null) {
-                            errorBody = response.errorBody().string();
-                        }
-                    } catch (IOException e) {
-                        Log.e(TAG, "Error al leer el cuerpo del error", e);
-                    }
-                    Log.e(TAG, String.format("Error HTTP al obtener ItemBPM %d. Código: %d, Error: %s", 
-                        idItemBPM, code, errorBody));
-                    listener.onItemCargado("Item " + idItemBPM);
-                }
-            }
-
-            @Override
-            public void onFailure(Call<ItemBPM> call, Throwable t) {
-                Log.e(TAG, "Error de red al obtener ItemBPM " + idItemBPM, t);
-                Log.e(TAG, "URL que falló: " + call.request().url());
-                listener.onItemCargado("Item " + idItemBPM);
-            }
-        });
-    }
-
-    private void obtenerDescripcionOperario(int idOperario, final OnOperarioCargadoListener listener) {
-        if (idOperario <= 0) {
-            listener.onOperarioCargado("No especificado");
-            return;
-        }
-
-        String token = ApiClient.leerToken(requireContext());
-        if (token == null) {
-            listener.onOperarioCargado("Operario " + idOperario);
-            return;
-        }
-
-        // Primero intentar obtener del cache de operarios
-        if (operariosCache.containsKey(idOperario)) {
-            listener.onOperarioCargado(operariosCache.get(idOperario));
-            return;
-        }
-
-        Call<Operario> call = ApiClient.getEndPoints().obtenerOperario(token, idOperario);
-        call.enqueue(new Callback<Operario>() {
-            @Override
-            public void onResponse(Call<Operario> call, Response<Operario> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    Operario operario = response.body();
-                    String nombreCompleto = operario.getApellido() + ", " + operario.getNombre();
-                    operariosCache.put(idOperario, nombreCompleto);
-                    listener.onOperarioCargado(nombreCompleto);
-                } else {
-                    // En caso de error 404 u otro error, usar un valor por defecto
-                    String valorPorDefecto = "Operario " + idOperario;
-                    operariosCache.put(idOperario, valorPorDefecto);
-                    listener.onOperarioCargado(valorPorDefecto);
-                }
-            }
-
-            @Override
-            public void onFailure(Call<Operario> call, Throwable t) {
-                String valorPorDefecto = "Operario " + idOperario;
-                operariosCache.put(idOperario, valorPorDefecto);
-                listener.onOperarioCargado(valorPorDefecto);
-            }
-        });
-    }
-
-    private void obtenerDescripcionSupervisor(int idSupervisor, final OnSupervisorCargadoListener listener) {
-        if (idSupervisor <= 0) {
-            listener.onSupervisorCargado("No especificado");
-            return;
-        }
-
-        // Primero intentar obtener del cache
-        if (supervisoresCache.containsKey(idSupervisor)) {
-            listener.onSupervisorCargado(supervisoresCache.get(idSupervisor));
-            return;
-        }
-
-        String token = ApiClient.leerToken(requireContext());
-        if (token == null) {
-            listener.onSupervisorCargado("Supervisor " + idSupervisor);
-            return;
-        }
-
-        ApiClient.getEndPoints().obtenerSupervisor(token, idSupervisor).enqueue(new Callback<Supervisor>() {
-            @Override
-            public void onResponse(Call<Supervisor> call, Response<Supervisor> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    Supervisor supervisor = response.body();
-                    String nombreCompleto = supervisor.getNombre() + " " + supervisor.getApellido();
-                    supervisoresCache.put(idSupervisor, nombreCompleto);
-                    listener.onSupervisorCargado(nombreCompleto);
-                } else {
-                    // En caso de error 404 u otro error, usar un valor por defecto
-                    String valorPorDefecto = "Supervisor " + idSupervisor;
-                    supervisoresCache.put(idSupervisor, valorPorDefecto);
-                    listener.onSupervisorCargado(valorPorDefecto);
-                }
-            }
-
-            @Override
-            public void onFailure(Call<Supervisor> call, Throwable t) {
-                String valorPorDefecto = "Supervisor " + idSupervisor;
-                supervisoresCache.put(idSupervisor, valorPorDefecto);
-                listener.onSupervisorCargado(valorPorDefecto);
-            }
-        });
-    }
-
-    private interface OnItemBPMCargadoListener {
-        void onItemCargado(String descripcionItem);
-        void onError(String error);
-    }
-
-    private interface OnOperarioCargadoListener {
-        void onOperarioCargado(String nombreOperario);
-        void onError(String error);
-    }
-
-    private interface OnSupervisorCargadoListener {
-        void onSupervisorCargado(String nombreSupervisor);
-        void onError(String error);
-    }
-
-    private String obtenerNombreOperario(int idOperario) {
-        // Intentar obtener del cache
-        String nombre = operariosCache.get(idOperario);
-        if (nombre != null) {
-            return nombre;
-        }
-        return "Operario " + idOperario;
-    }
-
-    private void mostrarError(String mensaje) {
-        requireActivity().runOnUiThread(() -> {
-            binding.progressBar.setVisibility(View.GONE);
-            binding.progressText.setVisibility(View.GONE);
-            Toast.makeText(requireContext(), mensaje, Toast.LENGTH_LONG).show();
-        });
-    }
-
-    private String obtenerNombreCompletoSupervisor(Supervisor supervisor) {
-        if (supervisor == null) return "No especificado";
-        return supervisor.getApellido() + ", " + supervisor.getNombre();
-    }
-
-    private String obtenerDescripcionActividad(int idActividad) {
-        return actividadesCache.getOrDefault(idActividad, "Actividad " + idActividad);
-    }
-
-    private String obtenerDescripcionLinea(int idLinea) {
-        return lineasCache.getOrDefault(idLinea, "Línea " + idLinea);
     }
 
     @Override

@@ -96,6 +96,9 @@ public class ApiClient {
         @GET("Supervisores")
         Call<Supervisor> miPerfil(@Header("Authorization") String token);
 
+        @GET("Supervisores/todos")
+        Call<List<Supervisor>> obtenerTodosLosSupervisores(@Header("Authorization") String token);
+
         @GET("Supervisores/{id}")
         Call<Supervisor> obtenerSupervisor(@Header("Authorization") String token, @Path("id") int idSupervisor);
 
@@ -123,8 +126,8 @@ public class ApiClient {
         @GET("Operarios/byLegajo")
         Call<Operario> obtenerOperario(@Header("Authorization") String token, @Query("legajo") int legajo);
 
-        @GET("Operarios/{id}")
-        Call<Operario> obtenerOperarioPorId(@Header("Authorization") String token, @Path("id") int idOperario);
+        @GET("Operarios")
+        Call<List<Operario>> obtenerTodosLosOperarios(@Header("Authorization") String token);
 
         @GET("Operarios/validar-legajo/{legajo}")
         Call<Boolean> verificarLegajo(@Header("Authorization") String token, @Path("legajo") int legajo);
