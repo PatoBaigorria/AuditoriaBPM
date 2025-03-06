@@ -1,8 +1,10 @@
 package baigorriap.auditoriabpm.ui.auditoria;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -11,6 +13,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
@@ -25,13 +28,14 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+
 import baigorriap.auditoriabpm.R;
 import baigorriap.auditoriabpm.databinding.FragmentHomeBinding;
 import baigorriap.auditoriabpm.model.Actividad;
 import baigorriap.auditoriabpm.model.Linea;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class HomeFragment extends Fragment {
 
@@ -47,32 +51,64 @@ public class HomeFragment extends Fragment {
     private int idLinea;
     private SharedPreferences sharedPreferences;
 
+    private void hideKeyboard() {
+        try {
+            Activity activity = getActivity();
+            if (activity != null) {
+                InputMethodManager imm = (InputMethodManager) activity.getSystemService(Context.INPUT_METHOD_SERVICE);
+                View focusedView = activity.getCurrentFocus();
+                if (focusedView != null) {
+                    imm.hideSoftInputFromWindow(focusedView.getWindowToken(), 0);
+                }
+            }
+        } catch (Exception e) {
+            Log.e("HomeFragment", "Error al ocultar el teclado: " + e.getMessage());
+        }
+    }
+
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
         
-        // Usar el ViewModel a nivel de actividad
         vm = new ViewModelProvider(requireActivity()).get(HomeViewModel.class);
 
         sharedPreferences = getActivity().getSharedPreferences("user_prefs", Context.MODE_PRIVATE);
         idSupervisor = sharedPreferences.getInt("idSupervisor", 0);
 
-        // Inicializa los Spinners
         spnActividad = binding.spnActividad;
         spnLinea = binding.spnLinea;
 
-        // Método para ocultar el teclado
-        private void hideKeyboard() {
-            View view = requireActivity().getCurrentFocus();
-            if (view != null) {
-                InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-                view.clearFocus();
-            }
+        if (getActivity() != null) {
+            getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
         }
 
-        // Configurar el botón siguiente para ocultar el teclado
+        binding.etLegajo.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        binding.etLegajo.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE || 
+                (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+                hideKeyboard();
+                String legajo = binding.etLegajo.getText().toString().trim();
+                if (!legajo.isEmpty()) {
+                    try {
+                        int legajoNum = Integer.parseInt(legajo);
+                        if (legajoNum > 0) {
+                            vm.cargarOperarioPorLegajo(legajoNum);
+                            vm.cargarDatosPorLegajo(legajoNum);
+                            return true;
+                        } else {
+                            binding.etLegajo.setError("El legajo debe ser mayor a 0");
+                        }
+                    } catch (NumberFormatException e) {
+                        binding.etLegajo.setError("Ingrese un número válido");
+                    }
+                } else {
+                    binding.etLegajo.setError("Ingrese un legajo");
+                }
+            }
+            return false;
+        });
+
         binding.btSiguiente.setOnClickListener(v -> {
             hideKeyboard();
             String nombreOperario = tvNombreOp.getText().toString();
@@ -81,7 +117,6 @@ public class HomeFragment extends Fragment {
                 return;
             }
             
-            // Toma el valor seleccionado directamente de los spinners
             Actividad selectedActividad = (Actividad) spnActividad.getSelectedItem();
             Linea selectedLinea = (Linea) spnLinea.getSelectedItem();
 
@@ -109,64 +144,6 @@ public class HomeFragment extends Fragment {
             navController.navigate(R.id.nav_auditoria, bundle);
         });
 
-        // Configurar el EditText del legajo
-        binding.etLegajo.setOnEditorActionListener((v, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_DONE || 
-                (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
-                
-                hideKeyboard();
-                
-                String legajo = v.getText().toString().trim();
-                if (!legajo.isEmpty()) {
-                    try {
-                        int legajoNum = Integer.parseInt(legajo);
-                        if (legajoNum > 0) {
-                            vm.cargarOperarioPorLegajo(legajoNum);
-                            vm.cargarDatosPorLegajo(legajoNum);
-                            return true;
-                        } else {
-                            binding.etLegajo.setError("El legajo debe ser mayor a 0");
-                        }
-                    } catch (NumberFormatException e) {
-                        binding.etLegajo.setError("Ingrese un número válido");
-                    }
-                } else {
-                    binding.etLegajo.setError("Ingrese un legajo");
-                }
-            }
-            return false;
-        });
-
-        // Configurar para ocultar el teclado cuando se toca fuera del EditText
-        root.setOnTouchListener((v, event) -> {
-            if (event.getAction() == android.view.MotionEvent.ACTION_DOWN) {
-                hideKeyboard();
-            }
-            return false;
-        });
-
-        // Inicializar los spinners con placeholders al inicio
-        vm.limpiarSpinnersConHint();
-        
-        // Crear y configurar adaptadores iniciales
-        List<Actividad> actividadesIniciales = new ArrayList<>();
-        actividadesIniciales.add(new Actividad(-1, "Actividad"));
-        actividadAdapter = new ArrayAdapter<>(requireContext(), R.layout.spinner_item, actividadesIniciales);
-        actividadAdapter.setDropDownViewResource(R.layout.spinner_item);
-        spnActividad.setAdapter(actividadAdapter);
-
-        List<Linea> lineasIniciales = new ArrayList<>();
-        lineasIniciales.add(new Linea(-1, "Línea"));
-        lineaAdapter = new ArrayAdapter<>(requireContext(), R.layout.spinner_item, lineasIniciales);
-        lineaAdapter.setDropDownViewResource(R.layout.spinner_item);
-        spnLinea.setAdapter(lineaAdapter);
-
-        // Configura el TextView
-        final TextView textView = binding.textHome;
-        vm.getText().observe(getViewLifecycleOwner(), textView::setText);
-        tvNombreOp = binding.tvNombreOp;
-
-        // Observa el LiveData del nombre del operario
         vm.getMOperario().observe(getViewLifecycleOwner(), operario -> {
             if (operario != null) {
                 tvNombreOp.setText(operario.getNombreCompleto());
@@ -174,17 +151,15 @@ public class HomeFragment extends Fragment {
                 binding.etLegajo.setError(null);
             } else {
                 tvNombreOp.setText("");
-                // Mostrar error solo si no se encuentra el operario
+                idOperario = 0;
                 String legajoInput = binding.etLegajo.getText().toString().trim();
                 if (!legajoInput.isEmpty()) {
                     binding.etLegajo.setError("No se encontró ningún operario con este legajo");
                 }
-                // Limpiar spinners cuando no hay operario
                 vm.limpiarSpinnersConHint();
             }
         });
 
-        // Observar mensajes de error
         vm.getErrorMessage().observe(getViewLifecycleOwner(), error -> {
             if (error != null && !error.isEmpty()) {
                 Toast.makeText(getContext(), error, Toast.LENGTH_SHORT).show();
@@ -192,10 +167,7 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        // Configura el EditText para el legajo
         EditText etLegajo = binding.etLegajo;
-
-        // Agrega un TextWatcher para detectar cambios en el campo de legajo
         etLegajo.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -204,8 +176,6 @@ public class HomeFragment extends Fragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String input = s.toString().trim();
-                
-                // Limpiar datos si el campo está vacío o si el legajo no tiene 6 dígitos
                 if (input.isEmpty()) {
                     tvNombreOp.setText("");
                     vm.limpiarSpinnersConHint();
@@ -219,7 +189,6 @@ public class HomeFragment extends Fragment {
                         lineaAdapter.add(new Linea(-1, "Línea"));
                         lineaAdapter.notifyDataSetChanged();
                     }
-                    
                     binding.etLegajo.setError(null);
                 } else {
                     try {
@@ -240,45 +209,12 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        // Lógica de validación del legajo
-        etLegajo.setOnEditorActionListener((v, actionId, event) -> {
-            String legajoInput = etLegajo.getText().toString().trim();
-            if (!legajoInput.isEmpty()) {
-                try {
-                    int legajo = Integer.parseInt(legajoInput);
-                    // Validar que el legajo sea mayor que 0
-                    if (legajo <= 0) {
-                        Toast.makeText(getContext(), "El legajo debe ser un número positivo", Toast.LENGTH_SHORT).show();
-                        return true;
-                    }
-                    vm.cargarOperarioPorLegajo(legajo);
-                    vm.cargarDatosPorLegajo(legajo);
-                    vm.cargarSupervisorPorId(idSupervisor);
-                } catch (NumberFormatException e) {
-                    Toast.makeText(getContext(), "Por favor, introduce un número de legajo válido", Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                vm.limpiarSpinnersConHint();
-                if (actividadAdapter != null) {
-                    actividadAdapter.clear();
-                    actividadAdapter.notifyDataSetChanged();
-                }
-                if (lineaAdapter != null) {
-                    lineaAdapter.clear();
-                    lineaAdapter.notifyDataSetChanged();
-                }
-            }
-            return true;
-        });
-
-        // Observa el LiveData de la lista de actividades
         vm.getMListaActividad().observe(getViewLifecycleOwner(), actividades -> {
             if (actividades != null && !actividades.isEmpty()) {
                 actividadAdapter = new ArrayAdapter<>(requireContext(), R.layout.spinner_item, actividades);
                 actividadAdapter.setDropDownViewResource(R.layout.spinner_item);
                 spnActividad.setAdapter(actividadAdapter);
                 
-                // Seleccionar la actividad del operario si existe
                 Integer idActividadOperario = vm.getMIdActividad().getValue();
                 if (idActividadOperario != null) {
                     for (int i = 0; i < actividades.size(); i++) {
@@ -291,14 +227,12 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        // Observa el LiveData de la lista de líneas
         vm.getMListaLinea().observe(getViewLifecycleOwner(), lineas -> {
             if (lineas != null && !lineas.isEmpty()) {
                 lineaAdapter = new ArrayAdapter<>(requireContext(), R.layout.spinner_item, lineas);
                 lineaAdapter.setDropDownViewResource(R.layout.spinner_item);
                 spnLinea.setAdapter(lineaAdapter);
                 
-                // Seleccionar la línea del operario si existe
                 Integer idLineaOperario = vm.getMIdLinea().getValue();
                 if (idLineaOperario != null) {
                     for (int i = 0; i < lineas.size(); i++) {
@@ -311,7 +245,6 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        // Observar cambios en el ID de actividad
         vm.getMIdActividad().observe(getViewLifecycleOwner(), idActividad -> {
             if (idActividad != null && actividadAdapter != null) {
                 List<Actividad> actividades = vm.getMListaActividad().getValue();
@@ -326,7 +259,6 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        // Observar cambios en el ID de línea
         vm.getMIdLinea().observe(getViewLifecycleOwner(), idLinea -> {
             if (idLinea != null && lineaAdapter != null) {
                 List<Linea> lineas = vm.getMListaLinea().getValue();
@@ -350,21 +282,37 @@ public class HomeFragment extends Fragment {
             }
         });
 
+        vm.limpiarSpinnersConHint();
+        
+        List<Actividad> actividadesIniciales = new ArrayList<>();
+        actividadesIniciales.add(new Actividad(-1, "Actividad"));
+        actividadAdapter = new ArrayAdapter<>(requireContext(), R.layout.spinner_item, actividadesIniciales);
+        actividadAdapter.setDropDownViewResource(R.layout.spinner_item);
+        spnActividad.setAdapter(actividadAdapter);
+
+        List<Linea> lineasIniciales = new ArrayList<>();
+        lineasIniciales.add(new Linea(-1, "Línea"));
+        lineaAdapter = new ArrayAdapter<>(requireContext(), R.layout.spinner_item, lineasIniciales);
+        lineaAdapter.setDropDownViewResource(R.layout.spinner_item);
+        spnLinea.setAdapter(lineaAdapter);
+
+        final TextView textView = binding.textHome;
+        vm.getText().observe(getViewLifecycleOwner(), textView::setText);
+        tvNombreOp = binding.tvNombreOp;
+
         return root;
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        // Verificar si venimos de otra vista y limpiar datos
-        if (getArguments() == null) {  // Si no hay argumentos, significa que no es la primera carga
+        if (getArguments() == null) {
             vm.limpiarTodosDatos();
             if (binding != null && binding.etLegajo != null) {
                 binding.etLegajo.setText("");
                 tvNombreOp.setText("");
             }
             
-            // Inicializar spinners con placeholders
             List<Actividad> actividadesIniciales = new ArrayList<>();
             actividadesIniciales.add(new Actividad(-1, "Actividad"));
             actividadAdapter = new ArrayAdapter<>(requireContext(), R.layout.spinner_item, actividadesIniciales);
