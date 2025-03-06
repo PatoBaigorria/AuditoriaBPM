@@ -33,6 +33,11 @@ import baigorriap.auditoriabpm.model.AuditoriaItemBPM.EstadoEnum;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.http.GET;
+import retrofit2.http.Header;
+import retrofit2.http.Path;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -458,7 +463,12 @@ public class ExportExcelFragment extends Fragment {
             @Override
             public void onError(String error) {
                 Log.e(TAG, "Error cargando item BPM: " + error);
-                descripcionItem[0] = "Item " + item.getIdItemBPM();
+                // Intentar obtener del cache primero
+                if (itemsBPMCache.containsKey(item.getIdItemBPM())) {
+                    descripcionItem[0] = itemsBPMCache.get(item.getIdItemBPM());
+                } else {
+                    descripcionItem[0] = "Item sin descripción";
+                }
                 itemBPMCargado.set(true);
                 checkAndWrite.run();
             }
@@ -513,7 +523,11 @@ public class ExportExcelFragment extends Fragment {
 
     private void cargarDatosNecesarios() {
         String token = ApiClient.leerToken(requireContext());
-        if (token == null) return;
+        if (token == null) {
+            Log.e(TAG, "No se pudo obtener el token de autenticación");
+            return;
+        }
+        Log.d(TAG, "Token obtenido correctamente: " + token);
 
         binding.progressBar.setVisibility(View.VISIBLE);
         binding.progressText.setVisibility(View.VISIBLE);
@@ -522,7 +536,7 @@ public class ExportExcelFragment extends Fragment {
 
         // Contador para saber cuándo se han completado todas las cargas
         final int[] loadCount = {0};
-        final int TOTAL_LOADS = 3; // actividades, líneas y operarios
+        final int TOTAL_LOADS = 4; // actividades, líneas, operarios y items BPM
 
         Runnable checkAllLoaded = () -> {
             loadCount[0]++;
@@ -535,8 +549,55 @@ public class ExportExcelFragment extends Fragment {
             }
         };
 
+        // Cargar todos los ItemsBPM
+        Log.d(TAG, "Iniciando carga de todos los ItemsBPM");
+        Call<List<ItemBPM>> itemsCall = ApiClient.getEndPoints().obtenerTodosLosItemsBPM(token);
+        Log.d(TAG, "URL a llamar: " + itemsCall.request().url());
+        
+        itemsCall.enqueue(new Callback<List<ItemBPM>>() {
+            @Override
+            public void onResponse(Call<List<ItemBPM>> call, Response<List<ItemBPM>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<ItemBPM> items = response.body();
+                    Log.d(TAG, "Respuesta exitosa al cargar ItemsBPM. Items recibidos: " + items.size());
+                    
+                    for (ItemBPM item : items) {
+                        int idItem = item.getIdItem();
+                        String descripcion = item.getDescripcion();
+                        Log.d(TAG, String.format("ItemBPM recibido - ID: %d, Descripción: '%s'", idItem, descripcion));
+                        
+                        if (descripcion != null && !descripcion.trim().isEmpty()) {
+                            itemsBPMCache.put(idItem, descripcion);
+                            Log.d(TAG, "Guardando en cache - ID: " + idItem + ", Descripción: '" + descripcion + "'");
+                        } else {
+                            Log.w(TAG, "ItemBPM con ID " + idItem + " tiene descripción nula o vacía");
+                        }
+                    }
+                    Log.d(TAG, "Total de ItemsBPM en cache: " + itemsBPMCache.size());
+                    Log.d(TAG, "Contenido del cache: " + itemsBPMCache);
+                } else {
+                    Log.e(TAG, "Error al cargar ItemsBPM. Código: " + response.code());
+                    try {
+                        if (response.errorBody() != null) {
+                            String errorBody = response.errorBody().string();
+                            Log.e(TAG, "Error del servidor: " + errorBody);
+                        }
+                    } catch (IOException e) {
+                        Log.e(TAG, "Error al leer la respuesta de error", e);
+                    }
+                }
+                checkAllLoaded.run();
+            }
+
+            @Override
+            public void onFailure(Call<List<ItemBPM>> call, Throwable t) {
+                Log.e(TAG, "Error de red al cargar ItemsBPM: " + t.getMessage(), t);
+                checkAllLoaded.run();
+            }
+        });
+
         // Cargar actividades
-        ApiClient.getEndPoints().obtenerTodasLasActividades("Bearer " + token).enqueue(new Callback<List<Actividad>>() {
+        ApiClient.getEndPoints().obtenerTodasLasActividades(token).enqueue(new Callback<List<Actividad>>() {
             @Override
             public void onResponse(Call<List<Actividad>> call, Response<List<Actividad>> response) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -556,33 +617,8 @@ public class ExportExcelFragment extends Fragment {
             }
         });
 
-        // Cargar líneas
-        ApiClient.getEndPoints().obtenerTodasLasLineas("Bearer " + token).enqueue(new Callback<List<Linea>>() {
-            @Override
-            public void onResponse(Call<List<Linea>> call, Response<List<Linea>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    for (Linea linea : response.body()) {
-                        lineasCache.put(linea.getIdLinea(), linea.getDescripcion());
-                    }
-                    Log.d(TAG, "Líneas cargadas: " + lineasCache.size());
-                }
-                checkAllLoaded.run();
-            }
-
-            @Override
-            public void onFailure(Call<List<Linea>> call, Throwable t) {
-                Log.e(TAG, "Error al cargar líneas", t);
-                mostrarError("Error al cargar líneas: " + t.getMessage());
-                checkAllLoaded.run();
-            }
-        });
-
-        // Cargar supervisor
-        supervisorNombre = "No especificado";
-        checkAllLoaded.run();
-
         // Cargar todos los operarios
-        ApiClient.getEndPoints().obtenerOperariosSinAuditorias("Bearer " + token).enqueue(new Callback<List<OperarioSinAuditoria>>() {
+        ApiClient.getEndPoints().obtenerOperariosSinAuditorias(token).enqueue(new Callback<List<OperarioSinAuditoria>>() {
             @Override
             public void onResponse(Call<List<OperarioSinAuditoria>> call, Response<List<OperarioSinAuditoria>> response) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -604,45 +640,71 @@ public class ExportExcelFragment extends Fragment {
     }
 
     private void obtenerDescripcionItemBPM(int idItemBPM, final OnItemBPMCargadoListener listener) {
+        Log.d(TAG, "Intentando obtener descripción para ItemBPM " + idItemBPM);
+        
         if (idItemBPM <= 0) {
+            Log.w(TAG, "ID ItemBPM inválido: " + idItemBPM);
             listener.onItemCargado("No especificado");
             return;
         }
 
         // Primero intentar obtener del cache
         if (itemsBPMCache.containsKey(idItemBPM)) {
-            listener.onItemCargado(itemsBPMCache.get(idItemBPM));
+            String descripcionCache = itemsBPMCache.get(idItemBPM);
+            Log.d(TAG, "ItemBPM " + idItemBPM + " encontrado en cache. Descripción: '" + descripcionCache + "'");
+            listener.onItemCargado(descripcionCache);
             return;
         }
+        Log.d(TAG, "ItemBPM " + idItemBPM + " no encontrado en cache. Cache actual: " + itemsBPMCache);
 
         String token = ApiClient.leerToken(requireContext());
         if (token == null) {
-            listener.onError("Token no disponible");
+            Log.e(TAG, "Token no disponible para ItemBPM " + idItemBPM);
+            listener.onItemCargado("Item " + idItemBPM);
             return;
         }
 
-        ApiClient.getEndPoints().obtenerItemBPMPorId("Bearer " + token, idItemBPM).enqueue(new Callback<ItemBPM>() {
+        Log.d(TAG, "Realizando llamada API para ItemBPM " + idItemBPM);
+        Call<ItemBPM> call = ApiClient.getEndPoints().obtenerItemBPMPorId(token, idItemBPM);
+        Log.d(TAG, "URL a llamar: " + call.request().url());
+        
+        call.enqueue(new Callback<ItemBPM>() {
             @Override
             public void onResponse(Call<ItemBPM> call, Response<ItemBPM> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     ItemBPM item = response.body();
                     String descripcion = item.getDescripcion();
-                    descripcion = descripcion != null ? descripcion : "Item " + idItemBPM;
-                    itemsBPMCache.put(idItemBPM, descripcion);
-                    listener.onItemCargado(descripcion);
+                    Log.d(TAG, String.format("ItemBPM %d obtenido de API. Descripción: '%s'", idItemBPM, descripcion));
+                    
+                    if (descripcion != null && !descripcion.trim().isEmpty()) {
+                        Log.d(TAG, "Guardando en cache ItemBPM " + idItemBPM + ": '" + descripcion + "'");
+                        itemsBPMCache.put(idItemBPM, descripcion);
+                        listener.onItemCargado(descripcion);
+                    } else {
+                        Log.w(TAG, "ItemBPM " + idItemBPM + " tiene descripción nula o vacía");
+                        listener.onItemCargado("Item " + idItemBPM);
+                    }
                 } else {
-                    // En caso de error 404 u otro error, usar un valor por defecto
-                    String valorPorDefecto = "Item " + idItemBPM;
-                    itemsBPMCache.put(idItemBPM, valorPorDefecto);
-                    listener.onItemCargado(valorPorDefecto);
+                    int code = response.code();
+                    String errorBody = "";
+                    try {
+                        if (response.errorBody() != null) {
+                            errorBody = response.errorBody().string();
+                        }
+                    } catch (IOException e) {
+                        Log.e(TAG, "Error al leer el cuerpo del error", e);
+                    }
+                    Log.e(TAG, String.format("Error HTTP al obtener ItemBPM %d. Código: %d, Error: %s", 
+                        idItemBPM, code, errorBody));
+                    listener.onItemCargado("Item " + idItemBPM);
                 }
             }
 
             @Override
             public void onFailure(Call<ItemBPM> call, Throwable t) {
-                String valorPorDefecto = "Item " + idItemBPM;
-                itemsBPMCache.put(idItemBPM, valorPorDefecto);
-                listener.onItemCargado(valorPorDefecto);
+                Log.e(TAG, "Error de red al obtener ItemBPM " + idItemBPM, t);
+                Log.e(TAG, "URL que falló: " + call.request().url());
+                listener.onItemCargado("Item " + idItemBPM);
             }
         });
     }
@@ -665,7 +727,7 @@ public class ExportExcelFragment extends Fragment {
             return;
         }
 
-        Call<Operario> call = ApiClient.getEndPoints().obtenerOperario("Bearer " + token, idOperario);
+        Call<Operario> call = ApiClient.getEndPoints().obtenerOperario(token, idOperario);
         call.enqueue(new Callback<Operario>() {
             @Override
             public void onResponse(Call<Operario> call, Response<Operario> response) {
@@ -709,7 +771,7 @@ public class ExportExcelFragment extends Fragment {
             return;
         }
 
-        ApiClient.getEndPoints().obtenerSupervisor("Bearer " + token, idSupervisor).enqueue(new Callback<Supervisor>() {
+        ApiClient.getEndPoints().obtenerSupervisor(token, idSupervisor).enqueue(new Callback<Supervisor>() {
             @Override
             public void onResponse(Call<Supervisor> call, Response<Supervisor> response) {
                 if (response.isSuccessful() && response.body() != null) {

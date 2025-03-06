@@ -133,6 +133,9 @@ public class ApiClient {
         @GET("ItemsBPM/{id}")
         Call<ItemBPM> obtenerItemBPMPorId(@Header("Authorization") String token, @Path("id") int idItemBPM);
 
+        @GET("ItemsBPM")
+        Call<List<ItemBPM>> obtenerTodosLosItemsBPM(@Header("Authorization") String token);
+
         // Auditorías
         @POST("Auditorias/alta-auditoria-completa")
         Call<ResponseBody> altaAuditoriaCompleta(@Header("Authorization") String token, @Body AltaAuditoriaRequest auditoria);
